@@ -1,0 +1,11 @@
+{
+  "name": "@fraggy/api",
+  "private": true,
+  "scripts": {
+    "dev": "../../.venv/bin/uvicorn fraggy_api.main:app --host 127.0.0.1 --port 8000 --reload --no-access-log",
+    "build": "../../.venv/bin/python -m compileall -q fraggy_api",
+    "lint": "../../.venv/bin/ruff check .",
+    "test": "../../.venv/bin/python -m pytest",
+    "typecheck": "../../.venv/bin/mypy fraggy_api"
+  }
+}

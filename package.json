@@ -1,0 +1,21 @@
+{
+  "name": "fraggyapi",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint && .venv/bin/ruff check workers scripts",
+    "test": "turbo run test && .venv/bin/python -m unittest discover -v",
+    "typecheck": "turbo run typecheck",
+    "format:check": "prettier --check .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "turbo": "2.11.9",
+    "prettier": "3.9.10"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "synthetic": true,
+  "source_id": "scentbase",
+  "source_record_id": "synthetic-001",
+  "source_url": "https://example.invalid/scentbase/synthetic-001",
+  "collected_at": "2026-10-17T00:00:00Z",
+  "payload": {
+    "brand_name": "Example House",
+    "perfume_name": "Imaginary Cedar",
+    "concentration": "eau_de_parfum",
+    "release_year": 2020,
+    "perfumers": [
+      "Example Perfumer"
+    ],
+    "gender_positioning": "unisex",
+    "fragrance_family": "woody",
+    "notes": {
+      "top": [
+        "bergamot"
+      ],
+      "heart": [
+        "iris"
+      ],
+      "base": [
+        "cedar"
+      ]
+    },
+    "main_accords": [
+      "woody"
+    ],
+    "bottle_sizes_ml": [
+      50,
+      100
+    ],
+    "product_identifiers": [],
+    "image_references": [],
+    "longevity": null,
+    "sillage": null,
+    "last_verified_at": null,
+    "source_specific": {
+      "fixture_label": "scentbase"
+    }
+  }
+}

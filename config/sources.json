@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "fragrantica",
+      "name": "Fragrantica",
+      "website": "https://www.fragrantica.com/",
+      "adapter": "fragrantica",
+      "source_type": "website",
+      "authorization_status": "pending_review",
+      "licensing_status": "pending_review",
+      "enabled": false,
+      "allowed_collection_methods": [],
+      "permitted_fields": [],
+      "reuse_restrictions": [
+        "No collection or redistribution until evidence is reviewed."
+      ],
+      "rate_limit": {
+        "requests_per_minute": 0,
+        "max_concurrency": 0
+      },
+      "last_successful_sync": null,
+      "adapter_status": "skeleton",
+      "error_history": [],
+      "compliance_review": {
+        "reviewed_at": null,
+        "reviewer": null,
+        "evidence": [],
+        "terms_reviewed": false,
+        "robots_reviewed": false,
+        "official_api_or_licensing_reviewed": false,
+        "automated_access_permitted": false,
+        "storage_permitted": false,
+        "commercial_redistribution_permitted": false
+      }
+    },
+    {
+      "id": "parfumo",
+      "name": "Parfumo",
+      "website": "https://www.parfumo.com/",
+      "adapter": "parfumo",
+      "source_type": "website",
+      "authorization_status": "pending_review",
+      "licensing_status": "pending_review",
+      "enabled": false,
+      "allowed_collection_methods": [],
+      "permitted_fields": [],
+      "reuse_restrictions": [
+        "No collection or redistribution until evidence is reviewed."
+      ],
+      "rate_limit": {
+        "requests_per_minute": 0,
+        "max_concurrency": 0
+      },
+      "last_successful_sync": null,
+      "adapter_status": "skeleton",
+      "error_history": [],
+      "compliance_review": {
+        "reviewed_at": null,
+        "reviewer": null,
+        "evidence": [],
+        "terms_reviewed": false,
+        "robots_reviewed": false,
+        "official_api_or_licensing_reviewed": false,
+        "automated_access_permitted": false,
+        "storage_permitted": false,
+        "commercial_redistribution_permitted": false
+      }
+    },
+    {
+      "id": "basenotes",
+      "name": "Basenotes",
+      "website": "https://basenotes.com/",
+      "adapter": "basenotes",
+      "source_type": "website",
+      "authorization_status": "pending_review",
+      "licensing_status": "pending_review",
+      "enabled": false,
+      "allowed_collection_methods": [],
+      "permitted_fields": [],
+      "reuse_restrictions": [
+        "No collection or redistribution until evidence is reviewed."
+      ],
+      "rate_limit": {
+        "requests_per_minute": 0,
+        "max_concurrency": 0
+      },
+      "last_successful_sync": null,
+      "adapter_status": "skeleton",
+      "error_history": [],
+      "compliance_review": {
+        "reviewed_at": null,
+        "reviewer": null,
+        "evidence": [],
+        "terms_reviewed": false,
+        "robots_reviewed": false,
+        "official_api_or_licensing_reviewed": false,
+        "automated_access_permitted": false,
+        "storage_permitted": false,
+        "commercial_redistribution_permitted": false
+      }
+    },
+    {
+      "id": "wikiparfum",
+      "name": "Wikiparfum",
+      "website": "https://www.wikiparfum.com/",
+      "adapter": "wikiparfum",
+      "source_type": "website",
+      "authorization_status": "pending_review",
+      "licensing_status": "pending_review",
+      "enabled": false,
+      "allowed_collection_methods": [],
+      "permitted_fields": [],
+      "reuse_restrictions": [
+        "No collection or redistribution until evidence is reviewed."
+      ],
+      "rate_limit": {
+        "requests_per_minute": 0,
+        "max_concurrency": 0
+      },
+      "last_successful_sync": null,
+      "adapter_status": "skeleton",
+      "error_history": [],
+      "compliance_review": {
+        "reviewed_at": null,
+        "reviewer": null,
+        "evidence": [],
+        "terms_reviewed": false,
+        "robots_reviewed": false,
+        "official_api_or_licensing_reviewed": false,
+        "automated_access_permitted": false,
+        "storage_permitted": false,
+        "commercial_redistribution_permitted": false
+      }
+    },
+    {
+      "id": "perfume_society",
+      "name": "The Perfume Society",
+      "website": "https://perfumesociety.org/",
+      "adapter": "perfume_society",
+      "source_type": "website",
+      "authorization_status": "pending_review",
+      "licensing_status": "pending_review",
+      "enabled": false,
+      "allowed_collection_methods": [],
+      "permitted_fields": [],
+      "reuse_restrictions": [
+        "No collection or redistribution until evidence is reviewed."
+      ],
+      "rate_limit": {
+        "requests_per_minute": 0,
+        "max_concurrency": 0
+      },
+      "last_successful_sync": null,
+      "adapter_status": "skeleton",
+      "error_history": [],
+      "compliance_review": {
+        "reviewed_at": null,
+        "reviewer": null,
+        "evidence": [],
+        "terms_reviewed": false,
+        "robots_reviewed": false,
+        "official_api_or_licensing_reviewed": false,
+        "automated_access_permitted": false,
+        "storage_permitted": false,
+        "commercial_redistribution_permitted": false
+      }
+    },
+    {
+      "id": "perfumemaster",
+      "name": "PerfumeMaster",
+      "website": "https://www.perfumemaster.com/",
+      "adapter": "perfumemaster",
+      "source_type": "website",
+      "authorization_status": "pending_review",
+      "licensing_status": "pending_review",
+      "enabled": false,
+      "allowed_collection_methods": [],
+      "permitted_fields": [],
+      "reuse_restrictions": [
+        "No collection or redistribution until evidence is reviewed."
+      ],
+      "rate_limit": {
+        "requests_per_minute": 0,
+        "max_concurrency": 0
+      },
+      "last_successful_sync": null,
+      "adapter_status": "skeleton",
+      "error_history": [],
+      "compliance_review": {
+        "reviewed_at": null,
+        "reviewer": null,
+        "evidence": [],
+        "terms_reviewed": false,
+        "robots_reviewed": false,
+        "official_api_or_licensing_reviewed": false,
+        "automated_access_permitted": false,
+        "storage_permitted": false,
+        "commercial_redistribution_permitted": false
+      }
+    },
+    {
+      "id": "scentbase",
+      "name": "ScentBase",
+      "website": "https://www.scentbase.com/",
+      "adapter": "scentbase",
+      "source_type": "website",
+      "authorization_status": "pending_review",
+      "licensing_status": "pending_review",
+      "enabled": false,
+      "allowed_collection_methods": [],
+      "permitted_fields": [],
+      "reuse_restrictions": [
+        "No collection or redistribution until evidence is reviewed."
+      ],
+      "rate_limit": {
+        "requests_per_minute": 0,
+        "max_concurrency": 0
+      },
+      "last_successful_sync": null,
+      "adapter_status": "skeleton",
+      "error_history": [],
+      "compliance_review": {
+        "reviewed_at": null,
+        "reviewer": null,
+        "evidence": [],
+        "terms_reviewed": false,
+        "robots_reviewed": false,
+        "official_api_or_licensing_reviewed": false,
+        "automated_access_permitted": false,
+        "storage_permitted": false,
+        "commercial_redistribution_permitted": false
+      }
+    }
+  ]
+}

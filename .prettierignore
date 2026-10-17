@@ -1,0 +1,16 @@
+node_modules
+.pnpm-store
+.next
+.venv
+.ruff_cache
+__pycache__
+pnpm-lock.yaml
+apps/api
+workers
+config/sources.json
+docs/phase-1-audit.md
+.turbo
+.mypy_cache
+.pytest_cache
+*.tsbuildinfo
+apps/web/next-env.d.ts
