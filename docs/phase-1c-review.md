@@ -14,6 +14,9 @@ Date: 2026-10-17. Scope: finalize the Phase 1 foundation; no Phase 2 work.
 - Excluded generated `apps/web/next-env.d.ts` from Git/Prettier alongside `.next`,
   caches, node_modules, Python bytecode, venvs and build outputs. Only source,
   templates, lockfiles, configuration and documentation should be staged.
+- Pinned CI actions to verified official release SHAs and fixed the runner to
+  Ubuntu 24.04 after the first successful run warned of deprecated action runtimes
+  and an impending `ubuntu-latest` OS migration.
 - Disabled checkout credential persistence in CI and enabled manual workflow
   dispatch in addition to main pushes and pull requests. CI remains read-only,
   bounded to 20 minutes and uses local Compose without paid services.
