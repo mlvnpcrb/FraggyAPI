@@ -1013,3 +1013,7 @@ em {
 .detail-copy h1 {
   overflow-wrap: anywhere;
 }
+
+.hero-feature {
+  min-width: 0;
+}

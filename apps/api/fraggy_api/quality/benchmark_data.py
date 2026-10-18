@@ -38,11 +38,11 @@ async def generate(session: AsyncSession, size: int) -> dict[str, Any]:
     name = await session.scalar(text("SELECT current_database()"))
     if (
         not isinstance(name, str)
-        or not name.startswith(("fraggy_bench_", "fraggy_test_"))
+        or not name.startswith(("fraggy_bench_", "fraggy_test_", "fraggy_preview_"))
         or not 1 <= size <= 10000
     ):
         raise ValueError(
-            "Benchmark fixtures require an owned disposable database and 1–10000 fragrances"
+            "Synthetic fixtures require an owned disposable test/benchmark/preview database and 1–10000 fragrances"
         )
     if await session.scalar(select(Brand.id).limit(1)) is not None:
         raise ValueError("Benchmark database must be empty; never overwrite data")

@@ -303,3 +303,53 @@ no genuine data or photo is acquired. Local media operations use
 `pnpm catalog:media -- --help`; `MEDIA_ROOT` is server-only and defaults to ignored
 `data/private/media`. Keep it private and outside all static mounts. No storage
 provider/CDN is required for the ₱0/month development workflow.
+
+## Phase 2H — verified local preview
+
+With Node 24, pnpm 11.25.0, Python 3.12+ and Docker/Compose available:
+
+```bash
+bash scripts/setup.sh
+docker compose up -d --wait
+pnpm preview:local
+```
+
+This explicitly starts an original-only synthetic preview in its own disposable
+PostgreSQL database, with 100 fictional fragrances and four original approved
+image fixtures. It safely applies migrations there and starts loopback FastAPI
+and Next development servers. The existing application DB is not reset or loaded.
+No genuine fragrance record, photo, live source or paid service is used.
+
+On the **same computer** open `http://127.0.0.1:3000/`. API docs are
+`http://127.0.0.1:8000/docs`, health `/health`, readiness `/ready` on port 8000.
+All were actually tested. In the Codex cloud environment these are internal
+loopback addresses, not publicly accessible preview URLs; no forwarded URL is
+available through the current tools. Use platform forwarding if separately
+available, or run these commands on your own computer. Do not call localhost a
+public deployment. Ports 3000 and 8000 must be free; use
+`pnpm preview:local --web-port 3001 --api-port 8001` for alternatives.
+
+Keep the supervisor terminal running. Ctrl-C normally stops owned processes and
+removes its own fixture DB/media; when a managed cloud terminal detaches a child,
+send SIGTERM only to the verified supervisor PID in ignored
+`data/reports/local-preview.json` and confirm `running=false`. It must not stop
+unrelated servers or delete other databases. Interrupted hosts may require an
+operator to inspect and explicitly clean their known owned fixture DB.
+
+Offline pilot readiness: `pnpm pilot:check -- config/wikidata-pilot-proposal.json`.
+The template keeps `CONTACT_EMAIL` unchanged and live discovery/collection disabled.
+A real monitored address, actual ID qualification, endpoint review and separate
+explicit user approval are still required. No genuine candidate IDs are invented.
+
+- [Readiness scorecard, counts, preview URLs and blockers](docs/phase-2h-readiness-report.md)
+- [Exact pilot scope, budget, methodology and approval gates](docs/phase-2h-pilot-preparation.md)
+- [Local search/filter/page/detail/media measurements](docs/phase-2h-performance.md)
+- [Engineering, security and browser audit evidence](docs/phase-2h-audit.md)
+
+Optional original-only browser QA (Chromium installed) while the owned preview is
+running: `node scripts/browser_qa.mjs data/reports/local-preview.json --outage`.
+It blocks external origins, inspects desktop/tablet/mobile and pauses/resumes only
+the verified owned API to test error recovery. Outputs stay under ignored
+`data/reports/browser-qa/`. Benchmarks use `scripts/benchmark_preview.py` and remove
+only their own fixture DB/files. Run database outage tests only after all other
+DB-dependent tests/benchmarks finish; restore PostgreSQL healthy afterward.

@@ -86,7 +86,15 @@ def catalog_url() -> Iterator[str]:
 
 @pytest_asyncio.fixture
 async def session(catalog_url: str) -> AsyncIterator[AsyncSession]:
-    engine = create_async_engine(catalog_url, poolclass=NullPool)
+    # Match the application's bounded-query connection policy. JIT compilation
+    # must not depend on stale/bloated disposable-fixture planner estimates when
+    # the real API explicitly disables it. Keep each regression's own timeout,
+    # rights assertions and un-analyzed import state unchanged.
+    engine = create_async_engine(
+        catalog_url,
+        poolclass=NullPool,
+        connect_args={"server_settings": {"jit": "off"}},
+    )
     try:
         async with engine.connect() as connection:
             transaction = await connection.begin()

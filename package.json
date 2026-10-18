@@ -16,6 +16,8 @@
     "catalog:import": ".venv/bin/python -m fraggy_api.importing.cli import",
     "catalog:manage": ".venv/bin/python -m fraggy_api.importing.cli",
     "catalog:quality": ".venv/bin/python -m fraggy_api.quality.cli",
+    "preview:local": ".venv/bin/python scripts/preview.py --synthetic",
+    "pilot:check": ".venv/bin/python scripts/check_pilot_readiness.py",
     "catalog:media": ".venv/bin/python -m fraggy_api.media.cli",
     "catalog:collect": ".venv/bin/python -m fraggy_api.collection.cli"
   },
