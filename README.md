@@ -1,8 +1,8 @@
 # FraggyAPI
 
-Phase 1B application foundation: a Next.js synthetic fragrance directory, FastAPI
+Phase 2A database foundation builds on the Phase 1B application: a Next.js synthetic fragrance directory, FastAPI
 operational endpoints, local PostgreSQL, Alembic, and seven disabled ingestion
-adapters. No real fragrance catalog, live scraping, or deployment is included.
+adapters. The PostgreSQL catalog is synthetic and opt-in; live scraping and deployments remain disabled.
 
 ## Requirements
 
@@ -104,7 +104,8 @@ and unittest covers all seven ingestion adapters. Database tests are not cached.
 CI runs PR/main checks plus migrations and runtime outage/recovery against Compose.
 An actual GitHub-hosted run remains unverified until the files are pushed.
 
-Alembic's initial revision establishes version history only, with no catalog tables.
+Alembic's initial revision establishes history; revisions through `0004_quality`
+now add the catalog/provenance schema and native search indexes.
 For a future approved schema task, work from `apps/api`, generate a revision using
 `../../.venv/bin/alembic revision --autogenerate -m "description"`, review it, and
 validate upgrade/downgrade on disposable data. See `AGENTS.md` for permanent rules.
@@ -125,3 +126,43 @@ Dependencies are pinned in the pnpm and Python locks. ESLint 9 and TypeScript 5.
 are deliberately selected because the current Next.js plugin peers do not support
 ESLint 10/TypeScript 7 together. Upgrade those tools only when peers support them.
 No deployment runtime has been silently substituted for Next.js or FastAPI.
+
+## Phase 2A catalog database
+
+```sh
+# No demo data is inserted by migration or startup.
+docker compose up -d --wait
+.venv/bin/alembic -c apps/api/alembic.ini upgrade head
+.venv/bin/alembic -c apps/api/alembic.ini current
+# Explicit, optional, invented local data only; safe to repeat, preserves edits.
+.venv/bin/python -m fraggy_api.seed --allow-demo-data
+# Requires CREATEDB on the disposable localhost PostgreSQL role.
+RUN_DB_TESTS=1 pnpm test
+```
+
+Twenty tables separate brands/fragrance lines from concentration/version-specific
+releases, bottle variants, composition, source records, field claims and media rights.
+UUIDs remain stable when display names change. All foreign keys use RESTRICT; no
+catalog/provenance records cascade away. Unknown concentration/year values remain
+null. Conflicting synthetic source years stay as claims for manual review.
+
+The test fixture creates randomly named `fraggy_test_*` databases on loopback,
+migrates them, rolls back each test, and drops only databases it created. Migration
+round trips use another disposable database; never run catalog downgrades against
+valuable data. Non-local/production test targets are refused. The application role
+used for an eventual deployment should not have CREATEDB; use a separate local/CI
+test role. No Supabase project is required or modified.
+
+Seed data includes 2 invented houses, 4 lines, 6 releases, EDT/EDP/reformulation
+examples, 4 variants, notes/accords/perfumers, two fictional archives, conflicting
+claims, review work and reference-only media. It also copies the seven candidate
+source definitions as disabled/pending rows. All source adapters remain disabled.
+Synthetic UUIDv5 fixture keys are fixed and never derived from display names.
+
+Existing operational API responses and frontend mocks are unchanged. Catalog
+endpoints and the separate Fraggy PWA client mapping are a later phase; no source
+payload, copyrighted description or image is exposed by new API routes.
+
+- [Database schema and ER diagram](docs/database-schema.md)
+- [Data dictionary and contracts](docs/data-dictionary.md)
+- [Phase 2A verification audit](docs/phase-2a-audit.md)

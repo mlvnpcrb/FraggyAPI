@@ -2,9 +2,9 @@
 
 ## Boundaries and phase
 
-- Phase 1B establishes infrastructure and synthetic UI only. Do not add fragrance
-  database models, ingestion orchestration, or live source collection without an
-  explicit later-phase task. Preserve existing ingestion tests and fixtures.
+- Phase 2A adds catalog/provenance models, migrations and opt-in synthetic seeds.
+  Do not implement Phase 2B endpoints, automatic matching, ingestion orchestration
+  or live collection without an explicit later-phase task. Preserve Phase 1 checks.
 - `apps/web` is Next.js App Router; `apps/api` is FastAPI. Browser code must never
   import Python, database credentials or server environment configuration.
 - Keep synthetic frontend data in `apps/web/src/lib/mock-data.ts` until a scoped API
@@ -29,8 +29,14 @@
   and tests. Do not call `metadata.create_all()` on application startup.
 - Never edit applied migrations or reset user data to resolve failures. Use a direct
   or session-pooler URL for migrations; never assume a transaction pooler supports DDL.
-- Phase 1B metadata is intentionally empty; the initial revision only establishes
-  Alembic history. Catalog models belong to Phase 2.
+- The initial revision establishes history; subsequent revisions own catalog,
+  provenance, search and data-quality changes. Import model metadata in Alembic,
+  never call create_all at startup. Run destructive round trips only in randomly
+  named disposable local test databases, never in the application database.
+- Canonical UUIDs are independent of names/slugs. Do not merge releases or versions
+  based on names. Preserve nulls, conflicting claims and field-level rights evidence.
+- Demo seeding requires an explicit flag, refuses production/remote CLI targets,
+  and must not overwrite existing rows. No seed runs in migrations or startup.
 
 ## Collection and security
 

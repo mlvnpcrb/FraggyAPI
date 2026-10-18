@@ -13,7 +13,7 @@ from .settings import Settings
 
 
 class Base(DeclarativeBase):
-    """Migration metadata; no catalog models in Phase 1B."""
+    """Shared metadata; models are registered explicitly, never created at startup."""
 
 
 def create_engine(settings: Settings) -> AsyncEngine:
