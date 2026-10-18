@@ -9,7 +9,7 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**"],
-      "env": ["API_BASE_URL"]
+      "env": ["API_BASE_URL", "FRAGGY_DEMO_MODE"]
     },
     "lint": {
       "outputs": []
@@ -38,7 +38,8 @@
     "NEXT_TELEMETRY_DISABLED",
     "TURBO_TELEMETRY_DISABLED",
     "API_BASE_URL",
-    "CATALOG_INCLUDE_SYNTHETIC"
+    "CATALOG_INCLUDE_SYNTHETIC",
+    "FRAGGY_DEMO_MODE"
   ],
   "globalDependencies": ["ruff.toml"]
 }

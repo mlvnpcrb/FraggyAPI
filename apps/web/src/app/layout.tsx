@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Providers } from "@/components/providers";
 import { Navigation } from "@/components/navigation";
 import "./globals.css";
+import { isDemoMode } from "@/lib/demo-mode";
 export const metadata: Metadata = {
   title: { default: "Fraggy — A world of scent", template: "%s | Fraggy" },
   description:
@@ -19,6 +20,13 @@ export default function RootLayout({
             Skip to content
           </a>
           <Navigation />
+          {isDemoMode() && (
+            <aside className="demo-banner" aria-label="Read-only demo">
+              <strong>Read-only fictional demo</strong> · 100 invented
+              fragrances. Original synthetic images. No real perfume data,
+              accounts, purchases, or live collection.
+            </aside>
+          )}
           <main id="main">{children}</main>
           <footer className="site-footer shell">
             <div>

@@ -108,6 +108,11 @@ export async function api<T>(
   path: string,
   fetcher: typeof fetch = fetch,
 ): Promise<T> {
+  const { isDemoMode } = await import("./demo-mode");
+  if (isDemoMode()) {
+    const { demoResponse } = await import("./demo");
+    return demoResponse(path) as T;
+  }
   const base = process.env.API_BASE_URL || "http://127.0.0.1:8000/api/v1";
   try {
     const response = await fetcher(`${base.replace(/\/$/, "")}${path}`, {

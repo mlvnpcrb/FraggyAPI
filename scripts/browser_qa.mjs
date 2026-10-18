@@ -7,17 +7,23 @@ import { spawn } from "node:child_process";
 
 const reportPath = process.argv[2] || "data/reports/local-preview.json";
 const preview = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+const standaloneDemo = preview.self_contained_demo === true;
 if (
   !preview.running ||
   !preview.synthetic_only ||
-  !/^fraggy_preview_[a-f0-9]{32}$/.test(preview.database_name)
+  (!standaloneDemo &&
+    !/^fraggy_preview_[a-f0-9]{32}$/.test(preview.database_name))
 )
   throw new Error("Owned synthetic preview required");
+if (standaloneDemo && process.argv.includes("--outage"))
+  throw new Error("Self-contained demo has no API process to pause");
 for (const base of [preview.frontend, preview.api])
   if (new URL(base).hostname !== "127.0.0.1")
     throw new Error("Literal loopback required");
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "fraggy-browser-"));
-const output = "data/reports/browser-qa";
+const output = standaloneDemo
+  ? "data/reports/vercel-demo-browser-qa"
+  : "data/reports/browser-qa";
 fs.mkdirSync(output, { recursive: true });
 const listener = net.createServer();
 await new Promise((resolve) => listener.listen(0, "127.0.0.1", resolve));
@@ -159,7 +165,7 @@ try {
     for (const [name, route] of cases) {
       await call("Page.navigate", { url: preview.frontend + route });
       await until(
-        'document.readyState === "complete" && !!document.querySelector("main h1")',
+        `location.href === ${JSON.stringify(preview.frontend + route)} && document.readyState === "complete" && !!document.querySelector("main h1")`,
       );
       await delay(200);
       if (name === "detail") {
@@ -171,7 +177,7 @@ try {
             `document.querySelectorAll('main img')[${index}].scrollIntoView({block:'center'})`,
           );
           await until(
-            `document.querySelectorAll('main img')[${index}].complete && document.querySelectorAll('main img')[${index}].naturalWidth > 0`,
+            `document.querySelectorAll('main img')[${index}]?.complete && document.querySelectorAll('main img')[${index}]?.naturalWidth > 0`,
           );
         }
         await evaluate("scrollTo(0,0)");
@@ -180,12 +186,18 @@ try {
         `({title:document.title,heading:document.querySelector('main h1')?.innerText,viewport:innerWidth,documentWidth:document.documentElement.scrollWidth,main:document.querySelectorAll('main').length,heroOverlap:(()=>{const a=document.querySelector('.hero-art'),c=document.querySelector('.hero-feature .source-credits')||document.querySelector('.hero-art .source-credits');return !!(a&&c&&c.getBoundingClientRect().top<a.getBoundingClientRect().bottom);})(),images:[...document.querySelectorAll('main img')].map(i=>({alt:i.alt,loaded:i.complete&&i.naturalWidth>0,src:i.getAttribute('src')})),placeholders:document.querySelectorAll('.bottle-placeholder').length,credits:document.querySelectorAll('.source-credits').length,links:[...document.querySelectorAll('.catalog-pagination a')].map(a=>a.textContent),empty:document.body.innerText.includes('No scents found'),controls:[...document.querySelectorAll('main input,main select,main button')].filter(e=>!e.getAttribute('aria-label')&&!e.textContent.trim()&&!e.labels?.length).length})`,
       );
       const pass =
+        (!standaloneDemo ||
+          (await evaluate(
+            '!!document.querySelector("[aria-label=\\"Read-only demo\\"]")',
+          ))) &&
         data.documentWidth <= width &&
         !data.heroOverlap &&
         data.main === 1 &&
         data.controls === 0 &&
         data.images.every((i) => i.alt && i.src.startsWith("/media/")) &&
         !data.heading?.includes("Something went wrong") &&
+        (name !== "detail" ||
+          (data.images.length === 4 && data.images.every((i) => i.loaded))) &&
         (name !== "empty" || data.empty);
       results.push({ device, name, pass, ...data });
       if (["home", "list", "detail"].includes(name)) {
@@ -249,6 +261,7 @@ try {
   }
   const summary = {
     synthetic_only: true,
+    self_contained_demo: standaloneDemo,
     externalBlocked,
     results,
     passed: results.filter((r) => r.pass).length,
