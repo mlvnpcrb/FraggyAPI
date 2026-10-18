@@ -16,7 +16,8 @@
     },
     "test": {
       "outputs": [],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["PYTEST_ADDOPTS"]
     },
     "typecheck": {
       "dependsOn": ["^typecheck"],

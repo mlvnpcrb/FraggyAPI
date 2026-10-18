@@ -2,17 +2,23 @@
 
 ## Boundaries and phase
 
-- Phase 2D adds reviewed public attribution and a fictional licensed-import pilot
-  to the bounded CSV/JSON/JSONL imports and trusted local operator review,
+- Phase 2E adds read-only catalog quality reports, source/license research and
+  disposable synthetic PostgreSQL benchmarks to the reviewed attribution/import
+  foundation and trusted local operator review,
   on the Phase 2A schema and Phase 2B read-only public API. Keep parsing, matching,
   staging, canonical review and field publication separate. No automatic merge,
-  website collection, public admin/upload route or Phase 3 without a task.
+  website collection, public admin/upload route, Phase 2F collection or Phase 3 without a task.
   Preserve operational health/readiness and all earlier phase tests.
 - Manifest flags are untrusted: only an explicit operator-reviewed manifest digest
   in PostgreSQL authorizes storage; publication requires a separate record decision.
   Quarantine unverified inputs as hashes/metadata only, never raw payloads.
   Operator commands stay non-production/loopback in this phase. Real datasets,
   private evidence/manifests and reports must not be committed.
+- Quality commands are non-production/loopback, PostgreSQL read-only and never
+  merge/correct/approve data. Reports expose sanitized counts/UUIDs, not legal
+  evidence. Explicit truncation is not a clean audit. Benchmark writes are only
+  original synthetic fixtures in UUID-owned disposable databases; never reset or
+  benchmark-load the application database. Keep report artifacts in ignored paths.
 - Attribution is public-only, adjacent-record plain text with safe HTTPS links.
   Human acceptance, complete metadata, current verification date and no unresolved
   conditions are required. Never expose private review evidence. Preserve additive

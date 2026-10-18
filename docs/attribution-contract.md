@@ -96,7 +96,15 @@ is visible to the next request; it cannot produce a mixture of policy versions.
 
 Policy reads are bounded to 1,000 active file-import policies. Overflow hides all
 file-import grants. One bounded credit query runs per nonempty page that has
-attributed sources; more than 20,000 candidate claims returns a sanitized 503
+attributed sources; more than 20,000 distinct authorized contributions returns a sanitized 503
 rather than a partial attribution set. This keeps credits complete within current
 pilot limits. Query count stays independent of page length: six queries for an
 unattributed fragrance page, seven for an attributed page.
+
+Phase 2E reduces repeated-credit work before the bound: SQL deduplicates identical
+authorized source/entity/field/value contributions, and Python unions field paths
+before constructing public credit DTOs. Rights are checked before deduplication;
+distinct providers, values and target fields are retained. Repeated private
+snapshots do not consume the cap merely by repeating the same public credit.
+A genuinely excessive distinct credit set still fails closed. No private record
+traceability is removed; its full history remains in PostgreSQL provenance.

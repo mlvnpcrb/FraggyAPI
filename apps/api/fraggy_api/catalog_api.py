@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 from sqlalchemy.sql.elements import ColumnElement
 
 from .database import get_session
@@ -150,15 +151,20 @@ async def project(
     release = FragranceRelease
     ranked = (
         select(
-            release.id,
+            release,
             func.row_number()
             .over(partition_by=release.fragrance_id, order_by=release.id)
             .label("rn"),
             func.count().over(partition_by=release.fragrance_id).label("total"),
         )
         .where(release.fragrance_id.in_(ids), release_visible(demo))
-        .subquery()
+        .cte("ranked_releases")
+        .prefix_with("MATERIALIZED")
     )
+    # Project directly from page-scoped materialized rows, keeping correlated
+    # grants behind the page restriction even with stale cardinality estimates.
+    # The CTE preserves the same rights checks and window bounds.
+    release = aliased(FragranceRelease, ranked)
     release_rows = (
         await session.execute(
             select(
@@ -188,7 +194,6 @@ async def project(
                     )
                 ),
             )
-            .join(ranked, release.id == ranked.c.id)
             .where(ranked.c.rn <= 20)
             .order_by(release.id)
         )
@@ -206,7 +211,7 @@ async def project(
         allowed = (
             select(
                 association.release_id.label("release_id"),
-                model.id.label("entity_id"),
+                model,
                 func.row_number()
                 .over(partition_by=association.release_id, order_by=model.id)
                 .label("rn"),
@@ -225,8 +230,10 @@ async def project(
                 ),
             )
             .distinct()
-            .subquery()
+            .cte(f"ranked_{field}")
+            .prefix_with("MATERIALIZED")
         )
+        model = aliased(model, allowed)
         items = (
             await session.execute(
                 select(
@@ -244,9 +251,7 @@ async def project(
                             synthetic_only=True,
                         ),
                     ),
-                )
-                .join(model, model.id == allowed.c.entity_id)
-                .where(allowed.c.rn <= 50)
+                ).where(allowed.c.rn <= 50)
             )
         ).all()
         for release_id, entity, synthetic in items:
@@ -302,7 +307,7 @@ async def catalog(
     if params.brand:
         conditions.append(b.slug == params.brand)
     if params.concentration or params.year or params.notes or params.accords:
-        release_conditions = [r.fragrance_id == f.id, release_visible(demo)]
+        release_conditions = [release_visible(demo)]
         for field, value in [
             ("concentration", params.concentration),
             ("release_year", params.year),
@@ -327,19 +332,36 @@ async def catalog(
         ]
         for field, values, association, model, key, target in filter_specs:
             for identity in values:
+                # Taxonomy visibility depends only on the requested UUID, not on
+                # each release. Keep it uncorrelated so PostgreSQL can evaluate
+                # it once while association grants still apply to the same release.
+                conditions.append(
+                    select(1)
+                    .select_from(model)
+                    .where(model.id == identity, visible(model, target, demo))
+                    .exists()
+                )
                 release_conditions.append(
                     select(1)
                     .select_from(association)
-                    .join(model, model.id == getattr(association, key))
                     .where(
                         association.release_id == r.id,
-                        model.id == identity,
-                        visible(model, target, demo),
-                        grant("release_id", r.id, field, model.id, demo, contains=True),
+                        getattr(association, key) == identity,
+                        grant("release_id", r.id, field, identity, demo, contains=True),
                     )
                     .exists()
                 )
-        conditions.append(select(1).select_from(r).where(*release_conditions).exists())
+        # Evaluate eligible releases once. A materialized UUID-only set avoids
+        # repeatedly expanding the rights graph for every root on un-analyzed
+        # imports while preserving all criteria on one release.
+        eligible_releases = (
+            select(r.fragrance_id)
+            .where(*release_conditions)
+            .distinct()
+            .cte("filter_releases")
+            .prefix_with("MATERIALIZED")
+        )
+        conditions.append(f.id.in_(select(eligible_releases.c.fragrance_id)))
     order: list[Any] = []
     if params.q:
         query = func.plainto_tsquery("simple", params.q)

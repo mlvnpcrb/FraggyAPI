@@ -25,7 +25,10 @@ def create_engine(settings: Settings) -> AsyncEngine:
         connect_args={
             "timeout": settings.database_timeout_seconds,
             "server_settings": {
-                "statement_timeout": str(int(settings.database_timeout_seconds * 1000))
+                "statement_timeout": str(int(settings.database_timeout_seconds * 1000)),
+                # Bounded request queries should not spend their timeout compiling
+                # complex rights predicates after crossing a planner cost threshold.
+                "jit": "off",
             },
             "statement_cache_size": 0,
             "prepared_statement_cache_size": 0,

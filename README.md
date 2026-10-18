@@ -237,3 +237,30 @@ human reviews storage, commercial redistribution, public fields and supported
 obligations. `publish` remains a separate record decision. `unpublish --record-id
 UUID --fields release_year ...` withdraws individual field grants; `revoke`
 withdraws a source's publication. License labels and URLs never authorize use.
+
+## Phase 2E — dataset discovery and catalog readiness
+
+Read-only catalog quality reports, conservative duplicate analysis and disposable
+PostgreSQL benchmarks extend the existing architecture. No real starter dataset
+is cleared. All seven website adapters remain disabled/pending review; automated
+collection is reserved for Phase 2F after Phase 2E review and merge.
+
+```bash
+pnpm catalog:quality -- --format json
+pnpm catalog:quality -- --format text --fail-on error
+.venv/bin/python scripts/benchmark_catalog.py --sizes 100,1000,10000 \
+  --repeats 5 --warmup 1 --output data/reports/benchmark.json
+```
+
+Quality reads a PostgreSQL-enforced read-only snapshot, never changes data, and
+reports missing percentages, candidates, provenance/rights/credit blockers and
+publication eligibility. Benchmarks create and drop their own UUID-named local
+databases; they never reset the application DB. Keep operational outputs private
+and ignored. No paid search or hosted services are introduced; development remains
+₱0/month.
+
+- [Source evidence and future collection suitability](docs/phase-2e-source-assessment.md)
+- [Quality checks and limits](docs/catalog-quality.md)
+- [JSON/text report contract](docs/catalog-quality-report.md)
+- [Local performance methodology/results](docs/phase-2e-performance.md)
+- [Phase 2E verification](docs/phase-2e-audit.md)
