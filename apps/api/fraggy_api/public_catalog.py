@@ -155,6 +155,10 @@ def grant(
             comparison,
             rights,
         )
+        # Keep this an indexed per-entity existence check. Flattening many
+        # grants into semi-joins can multiply badly underestimated claim rows
+        # on newly imported catalogs before PostgreSQL has fresh statistics.
+        .offset(0)
     )
 
 
