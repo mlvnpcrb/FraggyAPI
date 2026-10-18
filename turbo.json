@@ -9,7 +9,7 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**"],
-      "env": ["NEXT_PUBLIC_API_URL"]
+      "env": ["API_BASE_URL"]
     },
     "lint": {
       "outputs": []
@@ -35,7 +35,9 @@
     "RUN_DB_TESTS",
     "DATABASE_TIMEOUT_SECONDS",
     "NEXT_TELEMETRY_DISABLED",
-    "TURBO_TELEMETRY_DISABLED"
+    "TURBO_TELEMETRY_DISABLED",
+    "API_BASE_URL",
+    "CATALOG_INCLUDE_SYNTHETIC"
   ],
   "globalDependencies": ["ruff.toml"]
 }

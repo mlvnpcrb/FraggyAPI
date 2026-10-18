@@ -2,13 +2,17 @@
 
 ## Boundaries and phase
 
-- Phase 2A adds catalog/provenance models, migrations and opt-in synthetic seeds.
-  Do not implement Phase 2B endpoints, automatic matching, ingestion orchestration
-  or live collection without an explicit later-phase task. Preserve Phase 1 checks.
+- Phase 2B adds read-only catalog endpoints and the Next.js API client on the
+  Phase 2A catalog/provenance schema. Do not add writes, automatic matching,
+  ingestion orchestration, live collection or Phase 3 without an explicit task.
+  Preserve operational health/readiness checks.
 - `apps/web` is Next.js App Router; `apps/api` is FastAPI. Browser code must never
   import Python, database credentials or server environment configuration.
-- Keep synthetic frontend data in `apps/web/src/lib/mock-data.ts` until a scoped API
-  client replaces it. Label invented data clearly. Do not use unlicensed images.
+- Web pages use the typed public API client in `apps/web/src/lib/api.ts`; never
+  fall back to frontend fixtures on API failures. Label synthetic records.
+  `CATALOG_INCLUDE_SYNTHETIC` is opt-in and is always ignored in production.
+  Only explicit rights-checked projections may leave the API; selected claims
+  alone do not authorize redistribution. Do not use unlicensed images.
 - Use the existing isolated cloud checkout. Do not create worktrees unless requested.
 
 ## Conventions

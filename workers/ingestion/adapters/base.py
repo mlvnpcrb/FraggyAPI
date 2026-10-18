@@ -1,4 +1,5 @@
 """Phase 1 contracts. This module has no network implementation."""
+
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from copy import deepcopy
@@ -54,4 +55,6 @@ class SourceAdapter(ABC):
         payload = fixture.get("payload")
         if not isinstance(payload, dict):
             raise ValueError("Fixture payload must be an object")
-        return SourceRecord(self.source_id, record_id, url, timestamp, deepcopy(payload))
+        return SourceRecord(
+            self.source_id, record_id, url, timestamp, deepcopy(payload)
+        )

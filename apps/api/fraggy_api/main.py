@@ -8,13 +8,20 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, Request
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler,
+)
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from starlette.exceptions import HTTPException
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
+from .catalog_api import router as catalog_router
 from .database import create_engine, get_session
 from .settings import Settings
 
@@ -59,6 +66,40 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url=None,
         openapi_url="/openapi.json" if config.app_env == "development" else None,
     )
+    app.state.settings = config
+    app.include_router(catalog_router)
+
+    @app.exception_handler(HTTPException)
+    async def catalog_http_error(request: Request, exc: HTTPException) -> Response:
+        if request.url.path.startswith("/api/v1/"):
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={
+                    "error": {"code": str(exc.status_code), "message": str(exc.detail)}
+                },
+            )
+        return await http_exception_handler(request, exc)
+
+    @app.exception_handler(RequestValidationError)
+    async def catalog_validation_error(
+        request: Request, exc: RequestValidationError
+    ) -> Response:
+        if request.url.path.startswith("/api/v1/"):
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "error": {
+                        "code": "422",
+                        "message": "Invalid request",
+                        "details": [
+                            {"location": list(error["loc"]), "type": error["type"]}
+                            for error in exc.errors()
+                        ],
+                    }
+                },
+            )
+        return await request_validation_exception_handler(request, exc)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=config.cors_origins,
@@ -77,8 +118,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except Exception as exc:
             logger.error("unhandled_exception type=%s", type(exc).__name__)
             response = JSONResponse(
-                status_code=500, content={"detail": "Internal server error"}
+                status_code=500,
+                content=(
+                    {"error": {"code": "500", "message": "Internal server error"}}
+                    if request.url.path.startswith("/api/v1/")
+                    else {"detail": "Internal server error"}
+                ),
             )
+        if request.url.path.startswith("/api/v1/"):
+            response.headers["Cache-Control"] = "no-store"
         # Never log query strings, bodies, database URLs or exception messages.
         logger.info(
             "http_request method=%s status=%s duration_ms=%s",
@@ -92,7 +140,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def unexpected_error(request: Request, exc: Exception) -> JSONResponse:
         logger.error("unhandled_exception type=%s", type(exc).__name__)
         return JSONResponse(
-            status_code=500, content={"detail": "Internal server error"}
+            status_code=500,
+            content=(
+                {"error": {"code": "500", "message": "Internal server error"}}
+                if request.url.path.startswith("/api/v1/")
+                else {"detail": "Internal server error"}
+            ),
         )
 
     @app.get("/health", tags=["operations"])
@@ -123,7 +176,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @router.get("", tags=["metadata"])
     async def version() -> dict[str, str]:
-        return {"name": "FraggyAPI", "version": "0.1.0", "phase": "1B"}
+        return {"name": "FraggyAPI", "version": "0.1.0", "phase": "2B"}
 
     app.include_router(router)
     return app

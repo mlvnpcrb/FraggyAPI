@@ -13,7 +13,7 @@ from pydantic import SecretStr, ValidationError
 def test_health_version_and_docs() -> None:
     with TestClient(create_app()) as client:
         assert client.get("/health").json() == {"status": "ok"}
-        assert client.get("/api/v1").json()["phase"] == "1B"
+        assert client.get("/api/v1").json()["phase"] == "2B"
         assert client.get("/docs").status_code == 200
 
 

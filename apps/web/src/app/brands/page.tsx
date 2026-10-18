@@ -1,46 +1,67 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
-import { brands, fragrances } from "@/lib/mock-data";
+import { api, type NamedEntity, type Page } from "@/lib/api";
 export const metadata = { title: "The houses" };
-export default function BrandsPage() {
+export const dynamic = "force-dynamic";
+export default async function BrandsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ offset?: string }>;
+}) {
+  const { offset = "0" } = await searchParams;
+  const brands = await api<Page<NamedEntity>>(
+    `/brands?limit=20&offset=${encodeURIComponent(offset)}`,
+  );
   return (
     <section className="shell section brands-page">
       <p className="eyebrow">THE PEOPLE BEHIND THE FEELING</p>
       <h1>
         Independent spirit.
         <br />
-        <em>Imagined houses.</em>
+        <em>The houses.</em>
       </h1>
       <p className="page-intro">
-        Three fictional studios. Three different ways to see the world through
-        scent.
+        Explore the public catalog. Synthetic houses are marked as
+        demonstrations.
       </p>
       <div className="brands-grid">
-        {brands.map((brand, i) => (
+        {brands.data.map((brand, i) => (
           <Link
-            href={`/fragrances?brand=${encodeURIComponent(brand)}`}
-            key={brand}
+            href={`/fragrances?brand=${encodeURIComponent(brand.slug)}`}
+            key={brand.id}
             className="brand-card"
           >
-            <span className="eyebrow">HOUSE / 0{i + 1}</span>
+            <span className="eyebrow">HOUSE / {i + 1}</span>
             <div className="brand-monogram" aria-hidden="true">
-              {brand
+              {brand.name
                 .split(" ")
                 .map((w) => w[0])
                 .join("")}
             </div>
-            <h2>{brand}</h2>
+            <h2>{brand.name}</h2>
             <p>
-              {fragrances.filter((f) => f.brand === brand).length} imagined
-              fragrances <ArrowUpRight size={18} />
+              {brand.synthetic ? "Synthetic demo house" : "Explore fragrances"}
             </p>
           </Link>
         ))}
       </div>
-      <p className="demo-note">
-        These brands are fictional demonstration data, with no affiliation to
-        real perfume houses.
-      </p>
+      {!brands.data.length && (
+        <p className="empty-state">No public houses yet.</p>
+      )}
+      <nav aria-label="Brand pagination" className="catalog-pagination">
+        {brands.pagination.offset > 0 && (
+          <Link
+            href={`/brands?offset=${Math.max(0, brands.pagination.offset - 20)}`}
+          >
+            Previous page
+          </Link>
+        )}
+        {brands.pagination.offset + 20 < brands.pagination.total &&
+          brands.pagination.offset + 20 <= 10000 && (
+            <Link href={`/brands?offset=${brands.pagination.offset + 20}`}>
+              Next page
+            </Link>
+          )}
+      </nav>
     </section>
   );
 }

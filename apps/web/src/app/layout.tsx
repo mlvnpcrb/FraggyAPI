@@ -28,9 +28,9 @@ export default function RootLayout({
               <p>A little curiosity. A world of scent.</p>
             </div>
             <div>
-              <p>Phase 1B · An imagined collection</p>
+              <p>An independent scent discovery catalog</p>
               <small>
-                All perfumes and brands are fictional. No live source data.
+                Synthetic entries are labeled. Original bottle illustrations.
               </small>
             </div>
           </footer>
