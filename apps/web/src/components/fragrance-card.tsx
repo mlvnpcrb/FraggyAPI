@@ -2,7 +2,7 @@ import { SourceCredits } from "./source-credits";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { label, type Fragrance } from "@/lib/api";
-import { Bottle } from "./bottle";
+import { BottleImage } from "./bottle-image";
 export function FragranceCard({ fragrance: f }: { fragrance: Fragrance }) {
   return (
     <article>
@@ -11,7 +11,7 @@ export function FragranceCard({ fragrance: f }: { fragrance: Fragrance }) {
           <span className="family-tag">
             {f.synthetic ? "Synthetic demo" : "Discovery"}
           </span>
-          <Bottle color="#d3b994" accent="#695039" name={f.name} />
+          <BottleImage image={f.primary_image} name={f.name} />
           <span className="card-arrow">
             <ArrowUpRight size={18} />
           </span>
@@ -26,6 +26,9 @@ export function FragranceCard({ fragrance: f }: { fragrance: Fragrance }) {
         </div>
       </Link>
       <SourceCredits credits={f.attributions} />
+      {f.primary_image && (
+        <SourceCredits credits={[f.primary_image.attribution]} />
+      )}
     </article>
   );
 }

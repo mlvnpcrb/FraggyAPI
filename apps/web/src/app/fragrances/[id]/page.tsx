@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ApiError, getFragrance, label } from "@/lib/api";
-import { Bottle } from "@/components/bottle";
+import { BottleImage } from "@/components/bottle-image";
 export const dynamic = "force-dynamic";
 export default async function FragrancePage({
   params,
@@ -29,8 +29,10 @@ export default async function FragrancePage({
       </Link>
       <section className="detail-grid">
         <div className="detail-art">
-          <Bottle color="#d3b994" accent="#695039" name={f.name} large />
-          <span>ORIGINAL BOTTLE ILLUSTRATION</span>
+          <BottleImage image={f.primary_image} name={f.name} large />
+          {f.primary_image && (
+            <SourceCredits credits={[f.primary_image.attribution]} />
+          )}
         </div>
         <div className="detail-copy">
           <p className="eyebrow">{f.brand.name}</p>
@@ -40,6 +42,20 @@ export default async function FragrancePage({
               Synthetic demo fragrance. Invented data; no affiliation to real
               perfume houses.
             </p>
+          )}
+          {!!f.images?.length && (
+            <div className="image-gallery" aria-label="Fragrance image gallery">
+              {f.images
+                .filter((image) => image.id !== f.primary_image?.id)
+                .map((image) => (
+                  <figure key={image.id}>
+                    <BottleImage image={image} name={f.name} />
+                    <figcaption>
+                      <SourceCredits credits={[image.attribution]} />
+                    </figcaption>
+                  </figure>
+                ))}
+            </div>
           )}
           <div className="note-pyramid">
             {f.releases.map((r) => (
@@ -54,6 +70,37 @@ export default async function FragrancePage({
                   Accords:{" "}
                   {r.accords.map((a) => a.name).join(" · ") || "Not published"}
                 </p>
+                {!!r.images?.length && (
+                  <div
+                    className="image-gallery"
+                    aria-label={`${label(r.concentration)} images`}
+                  >
+                    {r.images.map((image) => (
+                      <figure key={image.id}>
+                        <BottleImage image={image} name={f.name} />
+                        <figcaption>
+                          <SourceCredits credits={[image.attribution]} />
+                        </figcaption>
+                      </figure>
+                    ))}
+                  </div>
+                )}
+                {r.variant_images?.map((variant) => (
+                  <div
+                    key={variant.variant_id}
+                    className="image-gallery"
+                    aria-label="Bottle variant images"
+                  >
+                    {variant.images?.map((image) => (
+                      <figure key={image.id}>
+                        <BottleImage image={image} name={f.name} />
+                        <figcaption>
+                          <SourceCredits credits={[image.attribution]} />
+                        </figcaption>
+                      </figure>
+                    ))}
+                  </div>
+                ))}
                 <small>Release ID: {r.id}</small>
               </section>
             ))}

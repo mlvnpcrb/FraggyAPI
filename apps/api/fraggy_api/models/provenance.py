@@ -304,6 +304,23 @@ class MediaAsset(Identity, Base):
         rights_check("media", "usage_status"),
         rights_check("media", "storage_status"),
         CheckConstraint(
+            "content_sha256 IS NULL OR content_sha256 ~ '^[a-f0-9]{64}$'",
+            name="ck_media_content_hash",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(media_metadata) = 'object' AND jsonb_typeof(image_policy) = 'object'",
+            name="ck_media_policy_objects",
+        ),
+        Index(
+            "uq_media_link_content_active",
+            "entity_link_id",
+            "content_sha256",
+            unique=True,
+            postgresql_where=text(
+                "content_sha256 IS NOT NULL AND storage_status = 'approved'"
+            ),
+        ),
+        CheckConstraint(
             "storage_path IS NULL OR (storage_status = 'approved' AND rights_evidence IS NOT NULL AND length(btrim(rights_evidence)) > 0)",
             name="ck_media_storage_rights",
         ),
@@ -325,3 +342,11 @@ class MediaAsset(Identity, Base):
         String(24), default="pending_review", server_default="pending_review"
     )
     storage_path: Mapped[str | None] = mapped_column(Text)
+
+    content_sha256: Mapped[str | None] = mapped_column(String(64), index=True)
+    media_metadata: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )
+    image_policy: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, default=dict, server_default=text("'{}'::jsonb")
+    )

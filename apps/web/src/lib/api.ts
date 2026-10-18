@@ -21,7 +21,27 @@ export type NamedEntity = {
   synthetic: boolean;
   attributions?: Attribution[];
 };
-export type Release = {
+export type BottleImage = {
+  id: string;
+  url: string;
+  thumbnail_url: string;
+  width: number;
+  height: number;
+  thumbnail_width: number;
+  thumbnail_height: number;
+  alt: string;
+  role: "primary" | "gallery";
+  source_id: string;
+  source_url: string;
+  attribution: Attribution;
+  synthetic: boolean;
+};
+export type ImageGallery = {
+  primary_image?: BottleImage | null;
+  images?: BottleImage[];
+};
+export type Release = ImageGallery & {
+  variant_images?: ({ variant_id: string } & ImageGallery)[];
   id: string;
   concentration: string | null;
   release_year: number | null;
@@ -30,11 +50,12 @@ export type Release = {
   synthetic: boolean;
   attributions?: Attribution[];
 };
-export type Fragrance = NamedEntity & {
-  brand: NamedEntity;
-  releases: Release[];
-  releases_truncated: boolean;
-};
+export type Fragrance = NamedEntity &
+  ImageGallery & {
+    brand: NamedEntity;
+    releases: Release[];
+    releases_truncated: boolean;
+  };
 export type Page<T> = {
   data: T[];
   pagination: { limit: number; offset: number; total: number };

@@ -70,6 +70,11 @@ class NoteInput(Strict):
 
 
 class Record(Strict):
+    # Source-specific references stay in the private snapshot, never canonical
+    # columns or public DTOs; require explicit source manifest storage permission.
+    source_metadata: dict[Name, Name] = Field(
+        default_factory=dict, max_length=10, exclude_if=lambda v: not v
+    )
     source_record_id: Annotated[str, StringConstraints(min_length=1, max_length=160)]
     source_url: str | None = Field(default=None, max_length=2048)
     brand_name: Name

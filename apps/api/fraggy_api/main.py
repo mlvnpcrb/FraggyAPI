@@ -23,6 +23,7 @@ from starlette.responses import Response
 
 from .catalog_api import router as catalog_router
 from .database import create_engine, get_session, request_session_factory
+from .media.api import router as media_router
 from .settings import Settings
 
 logger = logging.getLogger("fraggy.api")
@@ -68,6 +69,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = config
     app.include_router(catalog_router)
+    app.include_router(media_router)
 
     @app.exception_handler(HTTPException)
     async def catalog_http_error(request: Request, exc: HTTPException) -> Response:

@@ -1,8 +1,12 @@
 # FraggyAPI
 
-Phase 2D adds reviewed attribution, licensed-file import and catalog review to the Next.js fragrance discovery site to a read-only, rights-aware
-FastAPI catalog on PostgreSQL. The Phase 2A schema and seven disabled ingestion
-adapters are preserved. Live scraping, paid services and deployments remain disabled.
+Phase 2G prepares the first source-specific metadata integration and a rights-aware
+fragrance media pipeline on the existing Next.js, FastAPI and PostgreSQL foundation.
+Wikidata integration is validated with fictional offline records; genuine collection
+requires separate approval. Approved local bottle images support primary, gallery,
+release and variant selection, with independent storage/publication reviews and
+revocation. All seven website adapters, live scraping, paid services and deployments
+remain disabled. The separate Fraggy PWA is unchanged.
 
 ## Requirements
 
@@ -35,7 +39,7 @@ lock changes. Do not replace locks as a troubleshooting shortcut.
 Use `/` to explore, `/fragrances` to search/filter, `/fragrances/{uuid}` for a
 detail and `/brands` for houses. These are local route descriptions, not cloud
 preview links. The public catalog is empty until licensed fields are reviewed or
-local synthetic publication is explicitly enabled. Bottle illustrations are original CSS.
+local synthetic publication is explicitly enabled. Missing images use original CSS bottle placeholders; approved images are delivered through rights-checked local API routes.
 
 The API serves `/health` (200 independent of PostgreSQL), `/ready` (200 after a real
 `SELECT 1`, 503 on database failure), `/api/v1` metadata and development `/docs`.
@@ -282,3 +286,20 @@ disposable database. See [architecture](docs/phase-2f-architecture.md),
 [authorization](docs/collector-authorization.md), [operations](docs/collector-operations.md)
 and [audit](docs/phase-2f-audit.md). Never install a real-source schedule or supply
 external-network opt-in without a separately approved source-specific pilot.
+
+## Phase 2G — source and media readiness
+
+- [Source selection and verified research](docs/phase-2g-source-selection.md)
+- [Offline source integration](docs/phase-2g-integration.md)
+- [Real-data pilot approval package — not authorized](docs/first-real-data-pilot.md)
+- [Media architecture and operator commands](docs/fragrance-media-architecture.md)
+- [Independent image licensing assessment](docs/image-rights-and-sources.md)
+- [Phase 2G audit and measurements](docs/phase-2g-audit.md)
+
+Run the original-only integrated demonstration with
+`.venv/bin/python scripts/demo_collection.py --first-source --records 100`.
+It creates and removes only its owned disposable database and image directory;
+no genuine data or photo is acquired. Local media operations use
+`pnpm catalog:media -- --help`; `MEDIA_ROOT` is server-only and defaults to ignored
+`data/private/media`. Keep it private and outside all static mounts. No storage
+provider/CDN is required for the ₱0/month development workflow.

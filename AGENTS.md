@@ -2,6 +2,15 @@
 
 ## Boundaries and phase
 
+- Phase 2G prepares the Wikidata source adapter and independent local media rights
+  pipeline. Never run a genuine source query or download a real image without a
+  separate source/asset-specific pilot authorization. Policy/documentation research
+  is allowed. Fictional Q IDs must never be sent to a real endpoint. Keep images
+  private until independent hash-bound storage and publication reviews pass;
+  source/image revocation must hide bytes as well as metadata. Use media GC for
+  expired/withdrawn storage, preserving shared hashes. No static media mount,
+  external hotlink, paid CDN, PWA changes or automatic licensing approval.
+
 - Phase 2F adds explicitly reviewed, disabled-by-default automated collection to
   the existing import/review/publication system. External network remains off by
   default; never activate real collection or the seven website skeletons in this task.
