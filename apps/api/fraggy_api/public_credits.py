@@ -111,9 +111,15 @@ async def attach_credits(
         SourceRecord,
         DataSource,
     )
+    targets = tuple(ids)
     rows = (
         await session.execute(
-            select(c, link, source.id)
+            select(
+                source.id,
+                c.field_path,
+                c.value,
+                *(getattr(link, kind) for kind in targets),
+            )
             .join(link, c.entity_link_id == link.id)
             .join(record, link.source_record_id == record.id)
             .join(source, record.source_id == source.id)
@@ -138,44 +144,48 @@ async def attach_credits(
                 c.value_state == "known",
                 rights_condition(access),
             )
-            .order_by(c.id)
+            .distinct()
+            .order_by(source.id, c.field_path, c.value)
             .limit(MAX_CREDIT_CLAIMS + 1)
         )
     ).all()
     if len(rows) > MAX_CREDIT_CLAIMS:
         # Never return a truncated set of required credits with published values.
         raise HTTPException(503, "Attribution projection limit exceeded")
-    grouped: dict[int, dict[str, PublicAttribution]] = defaultdict(dict)
+    grouped: dict[int, dict[str, set[str]]] = defaultdict(dict)
     objects: dict[int, NamedPublic | ReleasePublic] = {}
-    for claim, entity_link, source_id in rows:
+    metadata: dict[str, dict[str, Any]] = {}
+    source_credits: dict[UUID, str] = {}
+    for source_id in credit_sources:
         attribution = access.sources[source_id]
         assert attribution is not None
         public = attribution.model_dump(mode="json")
         credit_id = digest(public)
-        for kind in ids:
-            identity = getattr(entity_link, kind)
+        source_credits[source_id] = credit_id
+        metadata[credit_id] = public
+    for row in rows:
+        source_id, field, claim_value, *entities = row
+        credit_id = source_credits[source_id]
+        for kind, identity in zip(targets, entities, strict=True):
             if identity is None:
                 continue
             for _, _, _, value, contains, scopes in indexed.get(
-                (kind, identity, claim.field_path), []
+                (kind, identity, field), []
             ):
                 matches = (
-                    isinstance(claim.value, list) and value in claim.value
+                    isinstance(claim_value, list) and value in claim_value
                     if contains
-                    else value == claim.value
+                    else value == claim_value
                 )
                 if not matches:
                     continue
                 for obj, path in scopes:
                     obj_key = id(obj)
                     objects[obj_key] = obj
-                    credits = grouped[obj_key]
-                    old = credits.get(credit_id)
-                    credits[credit_id] = PublicAttribution(
-                        **public,
-                        id=credit_id,
-                        fields=sorted(set([*(old.fields if old else []), path])),
-                    )
+                    grouped[obj_key].setdefault(credit_id, set()).add(path)
     for obj_key, entries in grouped.items():
         # DTOs are frozen; populate their mutable list before serialization only.
-        objects[obj_key].attributions.extend(entries[k] for k in sorted(entries))
+        objects[obj_key].attributions.extend(
+            PublicAttribution(**metadata[k], id=k, fields=sorted(entries[k]))
+            for k in sorted(entries)
+        )

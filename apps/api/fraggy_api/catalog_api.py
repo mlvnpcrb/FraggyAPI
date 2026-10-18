@@ -302,7 +302,7 @@ async def catalog(
     if params.brand:
         conditions.append(b.slug == params.brand)
     if params.concentration or params.year or params.notes or params.accords:
-        release_conditions = [r.fragrance_id == f.id, release_visible(demo)]
+        release_conditions = [release_visible(demo)]
         for field, value in [
             ("concentration", params.concentration),
             ("release_year", params.year),
@@ -327,19 +327,36 @@ async def catalog(
         ]
         for field, values, association, model, key, target in filter_specs:
             for identity in values:
+                # Taxonomy visibility depends only on the requested UUID, not on
+                # each release. Keep it uncorrelated so PostgreSQL can evaluate
+                # it once while association grants still apply to the same release.
+                conditions.append(
+                    select(1)
+                    .select_from(model)
+                    .where(model.id == identity, visible(model, target, demo))
+                    .exists()
+                )
                 release_conditions.append(
                     select(1)
                     .select_from(association)
-                    .join(model, model.id == getattr(association, key))
                     .where(
                         association.release_id == r.id,
-                        model.id == identity,
-                        visible(model, target, demo),
-                        grant("release_id", r.id, field, model.id, demo, contains=True),
+                        getattr(association, key) == identity,
+                        grant("release_id", r.id, field, identity, demo, contains=True),
                     )
                     .exists()
                 )
-        conditions.append(select(1).select_from(r).where(*release_conditions).exists())
+        # Evaluate eligible releases once. A materialized UUID-only set avoids
+        # repeatedly expanding the rights graph for every root on un-analyzed
+        # imports while preserving all criteria on one release.
+        eligible_releases = (
+            select(r.fragrance_id)
+            .where(*release_conditions)
+            .distinct()
+            .cte("filter_releases")
+            .prefix_with("MATERIALIZED")
+        )
+        conditions.append(f.id.in_(select(eligible_releases.c.fragrance_id)))
     order: list[Any] = []
     if params.q:
         query = func.plainto_tsquery("simple", params.q)

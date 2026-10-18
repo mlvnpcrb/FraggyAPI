@@ -163,3 +163,16 @@ PostgreSQL indexes remain. No migration is needed: structured attribution stays
 in the existing operator-reviewed manifest/evidence JSON, separate from canonical
 records. New optional manifest fields are omitted when empty, preserving old
 Phase 2C manifest digests.
+
+## Phase 2E query checks
+
+Public DTOs/routes remain unchanged. Repeated authorized credits are deduplicated
+in SQL by source, target, field and value before the contribution cap; field paths
+are unioned before DTO validation. Filtering checks a requested note/accord's
+visibility independently of releases, then checks membership and its grant on the
+same eligible release. A materialized UUID-only eligible-release set is evaluated
+once per SQL statement to avoid repeated expansion on un-analyzed imports. This
+avoids repeated taxonomy permission work while
+preserving hidden-taxonomy and cross-release protections. Nonempty attributed
+fragrance pages still execute seven SELECTs independent of page length. Local
+measurements and remaining limits are in [the performance report](phase-2e-performance.md).

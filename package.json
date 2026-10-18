@@ -14,7 +14,8 @@
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "catalog:import": ".venv/bin/python -m fraggy_api.importing.cli import",
-    "catalog:manage": ".venv/bin/python -m fraggy_api.importing.cli"
+    "catalog:manage": ".venv/bin/python -m fraggy_api.importing.cli",
+    "catalog:quality": ".venv/bin/python -m fraggy_api.quality.cli"
   },
   "devDependencies": {
     "turbo": "2.11.9",
