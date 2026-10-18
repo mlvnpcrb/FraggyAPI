@@ -54,7 +54,7 @@ async def measure(url: str, size: int, repeats: int, warmup: int) -> dict[str, A
                 (
                     await connection.execute(
                         text(
-                            "SELECT name,setting FROM pg_settings WHERE name IN ('shared_buffers','work_mem','max_connections')"
+                            "SELECT name,setting FROM pg_settings WHERE name IN ('shared_buffers','work_mem','max_connections','jit')"
                         )
                     )
                 )
