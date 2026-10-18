@@ -34,7 +34,14 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm format:check
-      - run: pnpm test
+      - name: Backend and frontend tests
+        id: tests
+        env:
+          PYTEST_ADDOPTS: "--junitxml=${{ github.workspace }}/test-results/backend.xml"
+        run: pnpm test
+      - name: Backend failure diagnostics
+        if: failure() && steps.tests.outcome == 'failure'
+        run: .venv/bin/python scripts/report_test_failures.py test-results/backend.xml
       - run: pnpm build
       - name: Check migrations
         run: |
