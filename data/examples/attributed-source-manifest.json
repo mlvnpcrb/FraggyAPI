@@ -1,0 +1,51 @@
+{
+  "source_id": "fictional-attribution-pilot",
+  "source_name": "Original Fictional Workshop Dataset",
+  "synthetic": true,
+  "dataset_origin": "Original fictional fixtures created for FraggyAPI; not downloaded",
+  "provider": "FraggyAPI fictional workshop",
+  "authorization_status": "approved",
+  "storage_permissions": true,
+  "redistribution_permissions": true,
+  "permitted_fields": [
+    "source_record_id",
+    "source_url",
+    "brand_name",
+    "brand_aliases",
+    "fragrance_name",
+    "family",
+    "collection",
+    "concentration",
+    "release_year",
+    "version_label",
+    "perfumers",
+    "notes",
+    "accords",
+    "bottle_sizes_ml",
+    "gtin",
+    "name",
+    "slug",
+    "brand_id",
+    "fragrance_id",
+    "aliases",
+    "bottle_size_ml"
+  ],
+  "attribution_requirements": ["Display provider credit beside every record"],
+  "license_evidence_references": [
+    "fictional-example-evidence-not-a-real-license"
+  ],
+  "review_date": null,
+  "attribution": {
+    "provider": "FraggyAPI fictional workshop",
+    "text": "Original invented metadata courtesy of the FraggyAPI fictional workshop.",
+    "source_url": "https://example.invalid/workshop",
+    "license_name": "Fictional pilot permission; not a real license",
+    "license_url": "https://example.invalid/fictional-permission",
+    "copyright_holder": "FraggyAPI fictional workshop",
+    "placement": "adjacent_record",
+    "modification_disclosure_required": true,
+    "modification_disclosure": "Names normalized; canonical records matched and projected by FraggyAPI.",
+    "redistribution_conditions": [],
+    "last_verified": "2026-10-18"
+  }
+}

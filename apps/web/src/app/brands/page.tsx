@@ -1,3 +1,4 @@
+import { SourceCredits } from "@/components/source-credits";
 import Link from "next/link";
 import { api, type NamedEntity, type Page } from "@/lib/api";
 export const metadata = { title: "The houses" };
@@ -25,23 +26,27 @@ export default async function BrandsPage({
       </p>
       <div className="brands-grid">
         {brands.data.map((brand, i) => (
-          <Link
-            href={`/fragrances?brand=${encodeURIComponent(brand.slug)}`}
-            key={brand.id}
-            className="brand-card"
-          >
-            <span className="eyebrow">HOUSE / {i + 1}</span>
-            <div className="brand-monogram" aria-hidden="true">
-              {brand.name
-                .split(" ")
-                .map((w) => w[0])
-                .join("")}
-            </div>
-            <h2>{brand.name}</h2>
-            <p>
-              {brand.synthetic ? "Synthetic demo house" : "Explore fragrances"}
-            </p>
-          </Link>
+          <article key={brand.id}>
+            <Link
+              href={`/fragrances?brand=${encodeURIComponent(brand.slug)}`}
+              className="brand-card"
+            >
+              <span className="eyebrow">HOUSE / {i + 1}</span>
+              <div className="brand-monogram" aria-hidden="true">
+                {brand.name
+                  .split(" ")
+                  .map((w) => w[0])
+                  .join("")}
+              </div>
+              <h2>{brand.name}</h2>
+              <p>
+                {brand.synthetic
+                  ? "Synthetic demo house"
+                  : "Explore fragrances"}
+              </p>
+            </Link>
+            <SourceCredits credits={brand.attributions} />
+          </article>
         ))}
       </div>
       {!brands.data.length && (

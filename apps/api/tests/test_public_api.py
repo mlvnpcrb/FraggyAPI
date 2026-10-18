@@ -55,6 +55,7 @@ async def test_catalog_and_detail(client: AsyncClient) -> None:
     detail = await client.get(f"/api/v1/fragrances/{paper['id']}")
     assert detail.json()["data"] == paper
     assert set(paper) == {
+        "attributions",
         "id",
         "name",
         "slug",
@@ -257,7 +258,7 @@ async def test_query_count_is_bounded(
             counts.clear()
             response = await client.get(f"/api/v1/fragrances?limit={limit}")
             assert response.status_code == 200, response.text
-            assert len(counts) == 5
+            assert len(counts) == 6  # Five catalog queries plus reviewed file policies.
     finally:
         event.remove(bind, "before_cursor_execute", count)
 

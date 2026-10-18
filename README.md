@@ -1,6 +1,6 @@
 # FraggyAPI
 
-Phase 2C adds trusted licensed-file import and catalog review to the Next.js fragrance discovery site to a read-only, rights-aware
+Phase 2D adds reviewed attribution, licensed-file import and catalog review to the Next.js fragrance discovery site to a read-only, rights-aware
 FastAPI catalog on PostgreSQL. The Phase 2A schema and seven disabled ingestion
 adapters are preserved. Live scraping, paid services and deployments remain disabled.
 
@@ -215,5 +215,25 @@ RUN_DB_TESTS=1 .venv/bin/python -m pytest apps/api/tests/test_import_cli.py -v
 The operator CLI refuses production/non-loopback targets. Real files/manifests and
 reports belong outside Git or under ignored `data/private`, `data/imports` or
 `data/reports`. Public API v1/operational contracts remain unchanged; the API phase
-metadata still describes the Phase 2B public interface. There is no Phase 2D,
-subscription, deployment, separate PWA change or live scraping in this phase.
+metadata still describes the Phase 2B public interface. Phase 2D extends that baseline below. No subscription, deployment, separate PWA
+change or live scraping is included.
+
+## Phase 2D — reviewed attribution and fictional pilot
+
+The local file-import foundation now supports explicit operator acceptance of
+structured, public-only attribution, field-level credit paths, multiple providers,
+source/field withdrawal and safe credits in the catalog UI. All seven website
+adapters remain disabled; no external dataset is cleared, downloaded or imported.
+No production deployment or paid infrastructure is introduced (₱0/month local
+operating target).
+
+- [Attribution API/PWA contract](docs/attribution-contract.md)
+- [Source readiness and unresolved permissions](docs/licensed-source-readiness.md)
+- [End-to-end fictional pilot commands](docs/pilot-import-workflow.md)
+- [Phase 2D verification report](docs/phase-2d-audit.md)
+
+Use `pnpm catalog:manage -- source-review ... --accept-attribution` only after a
+human reviews storage, commercial redistribution, public fields and supported
+obligations. `publish` remains a separate record decision. `unpublish --record-id
+UUID --fields release_year ...` withdraws individual field grants; `revoke`
+withdraws a source's publication. License labels and URLs never authorize use.

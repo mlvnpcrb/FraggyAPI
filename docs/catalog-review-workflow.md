@@ -1,5 +1,10 @@
 # Catalog operator review workflow
 
+> Phase 2D extends this Phase 2C baseline with explicitly reviewed structured
+> attribution. Follow [the attribution contract](attribution-contract.md) and
+> [the pilot workflow](pilot-import-workflow.md) for attributed sources; old
+> unattributed manifests retain their digest and behavior.
+
 Only a trusted local operator may review/import/publish. There is no public admin
 panel, upload route or automatic matching/merging. See source authorization before
 using actual data. The committed examples are wholly fictional.
