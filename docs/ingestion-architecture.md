@@ -119,3 +119,12 @@ models, HTTP source clients, canonical merger, or ingestion scheduler were added
 See the root README for the complete setup and `docs/phase-1-audit.md` for current
 application verification. The Phase 1 contracts above remain the boundary for the
 source adapters; later pipeline behavior remains design-only.
+
+## Phase 2A persistence
+
+The twenty-table catalog/provenance schema now implements the persistence boundary
+outlined above. See `database-schema.md`, `data-dictionary.md` and the Phase 2A audit.
+Source records, candidate links and field claims are separate from canonical entities;
+storage rights do not imply commercial reuse rights. Synthetic fixture records and
+review examples are explicit opt-in only. This adds no live collectors, matcher,
+merger, public catalog API or PWA data client. All seven source adapters remain disabled.

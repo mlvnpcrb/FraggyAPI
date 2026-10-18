@@ -1,9 +1,9 @@
-name: Phase 1 checks
+name: Foundation checks
 on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, feat/phase-2a-database]
 permissions:
   contents: read
 concurrency:

@@ -1,6 +1,7 @@
 import asyncio
 
 from alembic import context
+from fraggy_api import models  # noqa: F401 - register versioned metadata
 from fraggy_api.database import Base
 from fraggy_api.settings import Settings
 from sqlalchemy import pool
