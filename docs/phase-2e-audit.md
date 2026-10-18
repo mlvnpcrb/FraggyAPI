@@ -89,7 +89,7 @@ that conceals this import state.
 | Runtime recovery      | Owned API/frontend smoke with Compose outage/recovery                         | PASS; ready 200 → 503 → 200, independent health 200; PostgreSQL restored healthy                                                           |
 | Secrets/diff          | `scripts/check_secrets.py`; `git diff --check`                                | PASS; zero findings; intended project files only                                                                                           |
 | Scope/dependencies    | Applied migrations, dependencies/locks, adapter/registry files unchanged      | PASS; no paid/production/real-data/collection/billing/PWA changes                                                                          |
-| GitHub CI             | Actual remote workflows, linked after success                                 | Pending remote verification                                                                                                                |
+| GitHub CI             | Implementation workflow linked below; final PR checks authoritative           | PASS; actual implementation workflow completed successfully                                                                                |
 
 New tests cover quality categories, normalized duplicate distinctions, EDT/EDP/
 Parfum/version/year/related-name cases, missing percentages, existing conflicts,
@@ -137,3 +137,16 @@ manual review, provenance, rights-aware publication, monitoring and revocation.
 Resolve the measured query/capacity limits before promising public scale. Do not
 activate any of the seven website adapters based on robots or availability alone.
 Local development remains ₱0/month; no production deployment or paid service.
+
+## GitHub verification
+
+Implementation head `5bfdb9b4d63e793b1e5fe773254e5826b4c61afa` passed
+[Foundation checks](https://github.com/mlvnpcrb/FraggyAPI/actions/runs/39131563968)
+with conclusion SUCCESS. Actual GitHub steps verified frozen dependency setup,
+PostgreSQL tests, lint, strict types, formatting, production build, migration
+integrity, runtime/outage recovery and secret scanning.
+
+The following documentation-only commit records this evidence. The final PR
+Checks tab and completion report identify its exact head and actual workflows;
+this implementation run is not substituted for final-head validation. Leave the
+Phase 2E PR open/unmerged until separately approved.
