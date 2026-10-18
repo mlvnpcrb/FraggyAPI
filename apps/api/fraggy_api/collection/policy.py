@@ -168,6 +168,13 @@ class Grant(Strict):
             raise ValueError(
                 "External Wikidata pilot requires at least one second between requests"
             )
+        if not self.manifest.synthetic and self.endpoint.adapter == "wikidata_sparql":
+            from ..pilot_readiness import usable_contact
+
+            if not usable_contact(self.endpoint.user_agent):
+                raise ValueError(
+                    "Real monitored contact required before live Wikidata review"
+                )
         return self
 
 

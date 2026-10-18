@@ -2,6 +2,17 @@
 
 ## Boundaries and phase
 
+- Phase 2H is offline pilot readiness, original-only local preview and audit.
+  Keep CONTACT_EMAIL as the user-required placeholder until a real monitored
+  contact and exact discovery/collection scope are separately approved. Do not
+  infer an email or invent genuine Q IDs. Policy research alone is permitted.
+  preview:local explicitly creates only its own UUID disposable database and
+  original fixture artwork. Never reset the application DB. Stop owned preview
+  processes before builds/outage smoke; restart the requested preview afterward.
+  Loopback URLs are local to the running machine, never public cloud access.
+  Record unpatched dependency advisories and launch blockers without claiming a
+  penetration test or waiving rights/security checks. Phase 2H stays unmerged.
+
 - Phase 2G prepares the Wikidata source adapter and independent local media rights
   pipeline. Never run a genuine source query or download a real image without a
   separate source/asset-specific pilot authorization. Policy/documentation research

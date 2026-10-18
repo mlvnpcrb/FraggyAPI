@@ -42,36 +42,38 @@ export default async function Home() {
             <span>ENDLESS CURIOSITY</span>
           </div>
         </div>
-        <div className="hero-art">
-          <span className="art-corner">THE SCENT EDIT — 001</span>
-          <div className="art-ring" />
-          <Bottle
-            color="#c9b58f"
-            accent="#60503b"
-            name={fragrances[0]?.name ?? "Discovery"}
-            large
-          />
-          <SourceCredits credits={fragrances[0]?.attributions} />
-          <div className="art-caption">
-            <div>
-              <p className="eyebrow">THE QUIET EXPRESSION</p>
-              <h2>
-                Less noise.
-                <br />
-                More feeling.
-              </h2>
+        <div className="hero-feature">
+          <div className="hero-art">
+            <span className="art-corner">THE SCENT EDIT — 001</span>
+            <div className="art-ring" />
+            <Bottle
+              color="#c9b58f"
+              accent="#60503b"
+              name={fragrances[0]?.name ?? "Discovery"}
+              large
+            />
+            <div className="art-caption">
+              <div>
+                <p className="eyebrow">THE QUIET EXPRESSION</p>
+                <h2>
+                  Less noise.
+                  <br />
+                  More feeling.
+                </h2>
+              </div>
+              <Link
+                href={
+                  fragrances[0]
+                    ? `/fragrances/${fragrances[0].id}`
+                    : "/fragrances"
+                }
+                aria-label="Discover the collection"
+              >
+                <ArrowDownRight size={30} />
+              </Link>
             </div>
-            <Link
-              href={
-                fragrances[0]
-                  ? `/fragrances/${fragrances[0].id}`
-                  : "/fragrances"
-              }
-              aria-label="Discover the collection"
-            >
-              <ArrowDownRight size={30} />
-            </Link>
           </div>
+          <SourceCredits credits={fragrances[0]?.attributions} />
         </div>
       </section>
       <div className="note-ribbon">

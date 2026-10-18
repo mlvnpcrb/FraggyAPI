@@ -259,3 +259,17 @@ async def test_100_record_offline_source_pilot_stages_and_reruns_idempotently(
     again = await env.collector.run(env.identity)
     assert again["records_staged"] == 0 and again["records_unchanged"] == 100
     assert env.clock.now() >= datetime.now(UTC)
+
+
+async def test_real_wikidata_grant_rejects_user_contact_placeholder(
+    collection_environment,
+):
+    from fraggy_api.collection.policy import Grant
+    from fraggy_api.pilot_readiness import USER_AGENT_TEMPLATE
+
+    values = collection_environment.grant.model_dump(mode="json")
+    values["manifest"]["synthetic"] = False
+    values["endpoint"] = endpoint().model_dump(mode="json")
+    values["endpoint"]["user_agent"] = USER_AGENT_TEMPLATE
+    with pytest.raises(ValidationError, match="Real monitored contact required"):
+        Grant.model_validate(values)
