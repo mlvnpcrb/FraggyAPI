@@ -66,7 +66,8 @@ The following are current local results; remote GitHub evidence is separate belo
 Backend coverage adds public endpoint shapes, ranking/exact match, filter conjunction,
 lookup paging, pagination bounds, malformed/unknown IDs, invalid enums/extra input,
 empty catalogs, source/record/link/field revocation, stale values, production demo
-exclusion, current-value identity permission, nested release bounds, sanitized 500,
+exclusion, mixed licensed/synthetic field labeling, current-value identity permission,
+nested release bounds, sanitized 500,
 OpenAPI, no-store and fixed query counts. Existing schema/deletion/migration tests
 remain intact. Frontend tests cover real client request construction, server pages,
 UUID detail/null fields, API failures, synthetic labels, forms and pagination.
@@ -99,8 +100,22 @@ apps/api scripts workers` reports `39 files already formatted`.
 The workflow runs frozen setup/dependency installation, Compose, backend/frontend
 checks/tests, production build, migration integrity, explicitly opted-in demo HTTP
 smoke and database outage recovery, and secret scanning. Branch push and PR checks
-are configured for this feature branch. Actual results/links will be recorded after
-pushing; local success alone is not a remote CI success claim.
+are configured for this feature branch.
+
+Actual GitHub Actions passed for implementation commit
+`5a57ea41368876abf524a4cce77ae18b7b04f4be`:
+
+- [PR workflow 39110262638](https://github.com/mlvnpcrb/FraggyAPI/actions/runs/39110262638): SUCCESS.
+- [Branch workflow 39110242557](https://github.com/mlvnpcrb/FraggyAPI/actions/runs/39110242557): SUCCESS.
+
+The follow-up strengthens synthetic labels for mixed licensed/demo fields and
+relationships, with a regression assertion that production hides the synthetic
+scalar while retaining the licensed identity. All 112 local tests still pass.
+The [Phase 2B PR #2](https://github.com/mlvnpcrb/FraggyAPI/pull/2) checks panel is the
+authoritative result for subsequent/final feature heads; completion requires a
+successful actual workflow on that exact head, reported separately in the PR and
+completion report. Earlier successful runs alone never validate a newer commit.
+The Phase 2B PR remains open and unmerged.
 
 ## Limitations and next approval boundary
 

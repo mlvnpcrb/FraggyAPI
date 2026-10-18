@@ -350,6 +350,63 @@ async def test_approved_chain_and_revocation(
         response = await http.get("/api/v1/fragrances")
         assert response.json()["pagination"]["total"] == 4
         assert not any(f["synthetic"] for f in response.json()["data"])
+        # Mixed licensed/synthetic metadata must label the whole public context.
+        # Production must still suppress the synthetic scalar, not the real identity.
+        from fraggy_api.seed import COLLECTED_AT
+
+        await session.execute(
+            update(FieldProvenance)
+            .where(
+                FieldProvenance.id
+                == demo_id(f"public-claim:{demo_id('release:edp')}:concentration")
+            )
+            .values(usage_rights_status="pending_review")
+        )
+        await session.execute(
+            update(SourceRecord)
+            .where(SourceRecord.id == demo_id("record:1"))
+            .values(processing_state="linked")
+        )
+        await session.execute(
+            update(SourceEntityLink)
+            .where(SourceEntityLink.id == demo_id("link:1"))
+            .values(review_status="approved")
+        )
+        session.add(
+            FieldProvenance(
+                entity_link_id=demo_id("link:1"),
+                field_path="concentration",
+                value="eau_de_parfum",
+                value_state="known",
+                selection_status="selected",
+                collected_at=COLLECTED_AT,
+                usage_rights_status="synthetic",
+            )
+        )
+        await session.flush()
+        demo_detail = (
+            await client.get(f"/api/v1/fragrances/{demo_id('fragrance:1')}")
+        ).json()["data"]
+        assert demo_detail["synthetic"] is True
+        demo_release = next(
+            r for r in demo_detail["releases"] if r["id"] == str(demo_id("release:edp"))
+        )
+        assert (
+            demo_release["synthetic"] is True
+            and demo_release["concentration"] == "eau_de_parfum"
+        )
+        production_detail = (
+            await http.get(f"/api/v1/fragrances/{demo_id('fragrance:1')}")
+        ).json()["data"]
+        assert production_detail["synthetic"] is False
+        assert (
+            next(
+                r
+                for r in production_detail["releases"]
+                if r["id"] == str(demo_id("release:edp"))
+            )["concentration"]
+            is None
+        )
         # Selecting a claim with unknown rights must never authorize publication.
         await session.execute(
             update(FieldProvenance)

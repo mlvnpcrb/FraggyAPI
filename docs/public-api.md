@@ -115,7 +115,9 @@ Synthetic grants require a synthetic source, synthetic authorization/licensing,
 synthetic snapshot storage/redistribution and synthetic field status, plus the
 same reviewed-link/selected/current-value checks. `CATALOG_INCLUDE_SYNTHETIC=false`
 by default; `APP_ENV=production` always disables them, even if the setting is true.
-Each identity/release is labeled `synthetic`. The opt-in seed command creates
+Each identity/release is labeled `synthetic`; synthetic field or relationship grants
+propagate that label to containing release/fragrance summaries, including mixed
+licensed/demo records. Labels are conservative, not a redistribution license. The opt-in seed command creates
 explicit synthetic grants only for original invented fixture values, preserving
 existing edits and conflicting candidate years. No startup/migration inserts data.
 

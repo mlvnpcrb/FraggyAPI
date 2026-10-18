@@ -103,7 +103,17 @@ def named(model: Any, synthetic: bool) -> NamedPublic:
 
 
 def synthetic_flag(model: Any, target: str, demo: bool) -> ColumnElement[bool]:
-    return grant(target, model.id, "name", model.name, demo, synthetic_only=True)
+    flags = [
+        grant(target, model.id, field, getattr(model, field), demo, synthetic_only=True)
+        for field in ("name", "slug")
+    ]
+    if target == "fragrance_id":
+        flags.append(
+            grant(
+                target, model.id, "brand_id", model.brand_id, demo, synthetic_only=True
+            )
+        )
+    return or_(*flags)
 
 
 def release_visible(demo: bool) -> ColumnElement[bool]:
@@ -162,13 +172,18 @@ async def project(
                 grant(
                     "release_id", release.id, "release_year", release.release_year, demo
                 ),
-                grant(
-                    "release_id",
-                    release.id,
-                    "fragrance_id",
-                    release.fragrance_id,
-                    demo,
-                    synthetic_only=True,
+                or_(
+                    *(
+                        grant(
+                            "release_id",
+                            release.id,
+                            field,
+                            getattr(release, field),
+                            demo,
+                            synthetic_only=True,
+                        )
+                        for field in ("fragrance_id", "concentration", "release_year")
+                    )
                 ),
             )
             .join(ranked, release.id == ranked.c.id)
@@ -215,7 +230,18 @@ async def project(
                 select(
                     allowed.c.release_id,
                     model,
-                    synthetic_flag(model, target, demo),
+                    or_(
+                        synthetic_flag(model, target, demo),
+                        grant(
+                            "release_id",
+                            allowed.c.release_id,
+                            field,
+                            model.id,
+                            demo,
+                            contains=True,
+                            synthetic_only=True,
+                        ),
+                    ),
                 )
                 .join(model, model.id == allowed.c.entity_id)
                 .where(allowed.c.rn <= 50)
@@ -237,12 +263,24 @@ async def project(
                 release_year=entity.release_year if year_ok else None,
                 notes=associations["notes"].get(entity.id, []),
                 accords=associations["accords"].get(entity.id, []),
-                synthetic=synthetic,
+                synthetic=synthetic
+                or any(
+                    item.synthetic
+                    for field in ("notes", "accords")
+                    for item in associations[field].get(entity.id, [])
+                ),
             )
         )
     return [
         FragrancePublic(
-            **named(fragrance, synthetic or brand_synthetic).model_dump(),
+            **named(
+                fragrance,
+                synthetic
+                or brand_synthetic
+                or any(
+                    release.synthetic for release in by_fragrance.get(fragrance.id, [])
+                ),
+            ).model_dump(),
             brand=named(brand, brand_synthetic),
             releases=by_fragrance.get(fragrance.id, []),
             releases_truncated=fragrance.id in truncated,
