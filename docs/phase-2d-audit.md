@@ -45,8 +45,7 @@ Baseline `RUN_DB_TESTS=1 pnpm test` passed 162 backend + 15 frontend + 3 ingesti
 ## Verification evidence
 
 The final uninterrupted local run passed all 232 tests with no skips (203 backend,
-26 frontend, 3 ingestion). GitHub checks/PR links are recorded after actual remote
-success.
+26 frontend, 3 ingestion). The implementation GitHub workflow also passed.
 
 | Check                          | Command/evidence                                                                                                         | Result                                                                                                                                                                     |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -62,7 +61,7 @@ success.
 | Secrets                        | `.venv/bin/python scripts/check_secrets.py`                                                                              | PASS; zero findings in working files and reachable history                                                                                                                 |
 | Diff / generated files         | `git diff --check`; intended-file review                                                                                 | PASS; private manifests/reports, DB volumes, `.env`, caches and build outputs excluded                                                                                     |
 | Dependencies / migration scope | Lockfiles, dependency manifests, applied migrations, registry and adapters unchanged                                     | PASS; no new dependency/service/paid resource                                                                                                                              |
-| GitHub checks                  | Actual remote runs, linked below after completion                                                                        | Pending                                                                                                                                                                    |
+| GitHub checks                  | Actual implementation run linked below; final PR Checks tab is authoritative                                             | PASS; implementation workflow completed successfully                                                                                                                       |
 
 An initial frontend test expected an isolated text node where markup intentionally
 combines provider and credit text; assertions now check accessible region content
@@ -110,3 +109,16 @@ See [attribution contract](attribution-contract.md),
 [source readiness](licensed-source-readiness.md) and
 [pilot workflow](pilot-import-workflow.md) before an explicitly authorized real
 pilot. Phase 2D must remain an unmerged review PR until separately approved.
+
+## GitHub verification
+
+Implementation head `064680660cd6925a658ed015b48bc9ec57d8868a` passed
+[Foundation checks](https://github.com/mlvnpcrb/FraggyAPI/actions/runs/39121720175)
+with conclusion SUCCESS. Dependency setup, PostgreSQL startup, lint, type checks,
+formatting, tests, production build, migration checks, runtime outage/recovery and
+secret scanning all completed successfully on GitHub.
+
+The documentation follow-up commit changes only this report. The Phase 2D PR
+Checks tab and completion report identify the final head and its actual CI runs;
+this earlier implementation run is not substituted for final-head validation.
+The PR remains open/unmerged pending explicit approval.
