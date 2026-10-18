@@ -7,16 +7,9 @@
       "persistent": true
     },
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**"
-      ],
-      "env": [
-        "API_BASE_URL"
-      ]
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": ["API_BASE_URL"]
     },
     "lint": {
       "outputs": []
@@ -24,14 +17,10 @@
     "test": {
       "outputs": [],
       "cache": false,
-      "passThroughEnv": [
-        "PYTEST_ADDOPTS"
-      ]
+      "passThroughEnv": ["PYTEST_ADDOPTS"]
     },
     "typecheck": {
-      "dependsOn": [
-        "^typecheck"
-      ],
+      "dependsOn": ["^typecheck"],
       "outputs": [],
       "cache": false
     },
@@ -51,7 +40,5 @@
     "API_BASE_URL",
     "CATALOG_INCLUDE_SYNTHETIC"
   ],
-  "globalDependencies": [
-    "ruff.toml"
-  ]
+  "globalDependencies": ["ruff.toml"]
 }
