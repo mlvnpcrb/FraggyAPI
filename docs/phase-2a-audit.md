@@ -22,8 +22,10 @@ Branch: `feat/phase-2a-database`. Scope: local database foundation only.
 | Secret/generated file checks | PASS          | No secret-pattern matches; only intended source/docs/config files prepared for Git; dependency lockfiles unchanged                                   |
 | GitHub CI / PR               | External gate | Feature push and PR trigger Foundation checks; actual run/PR URLs are recorded in the final task report and visible in GitHub checks                 |
 
-This file records executable local evidence, not a claim that local tests prove a
-remote workflow passed. Live branch CI is available at:
+The implementation workflow was independently checked through GitHub Actions: status
+`completed`, conclusion `success`, matching the implementation SHA above. This
+documentation update records that evidence; its final PR/head checks are verified
+separately before task completion. Live branch CI is available at:
 https://github.com/mlvnpcrb/FraggyAPI/actions?query=branch%3Afeat%2Fphase-2a-database
 
 ## Commands and output
