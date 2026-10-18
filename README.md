@@ -1,8 +1,8 @@
 # FraggyAPI
 
-Phase 2A database foundation builds on the Phase 1B application: a Next.js synthetic fragrance directory, FastAPI
-operational endpoints, local PostgreSQL, Alembic, and seven disabled ingestion
-adapters. The PostgreSQL catalog is synthetic and opt-in; live scraping and deployments remain disabled.
+Phase 2B connects a Next.js fragrance discovery site to a read-only, rights-aware
+FastAPI catalog on PostgreSQL. The Phase 2A schema and seven disabled ingestion
+adapters are preserved. Live scraping, paid services and deployments remain disabled.
 
 ## Requirements
 
@@ -32,10 +32,10 @@ intentionally resolve `apps/api[dev]` in a clean venv and review both manifest a
 lock changes. Do not replace locks as a troubleshooting shortcut.
 
 `pnpm dev` runs web on port 3000 and API on port 8000, both bound to loopback.
-Use `/` to explore, `/fragrances` to search/filter, `/fragrances/santal-no-04` for a
-sample detail and `/brands` for houses. These are local route descriptions, not
-cloud preview links. Web content is explicitly synthetic; bottle illustrations are
-original CSS and require no external image service.
+Use `/` to explore, `/fragrances` to search/filter, `/fragrances/{uuid}` for a
+detail and `/brands` for houses. These are local route descriptions, not cloud
+preview links. The public catalog is empty until licensed fields are reviewed or
+local synthetic publication is explicitly enabled. Bottle illustrations are original CSS.
 
 The API serves `/health` (200 independent of PostgreSQL), `/ready` (200 after a real
 `SELECT 1`, 503 on database failure), `/api/v1` metadata and development `/docs`.
@@ -50,10 +50,10 @@ disposable **local development only**, and must be replaced for hosting.
 ## Configuration and Supabase compatibility
 
 API settings load environment variables and the root `.env`; exported values win.
-Compose also reads the root `.env`. The optional Next.js public API URL is reserved
-for a later API client; the current UI reads only `src/lib/mock-data.ts`. If needed
-for frontend development, put only the non-secret `NEXT_PUBLIC_API_URL` in
-`apps/web/.env.local`. Never copy the root database settings into frontend env files.
+Compose also reads the root `.env`. Next.js uses the server-only `API_BASE_URL`
+(default `http://127.0.0.1:8000/api/v1`); export it before `pnpm dev` or set it in
+`apps/web/.env.local`. It is not a browser credential. Never copy root database
+settings into frontend env files. Root `.env` is not automatically loaded by Next.js.
 
 | Variable                                                             | Purpose                                                                   |
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------- |
@@ -63,6 +63,8 @@ for frontend development, put only the non-secret `NEXT_PUBLIC_API_URL` in
 | `CORS_ORIGINS`                                                       | JSON array of explicit origins (no wildcard/path/credentials)             |
 | `DATABASE_TIMEOUT_SECONDS`                                           | Positive readiness timeout, at most 30 seconds; default 3                 |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` | Compose initialization and exposed local port                             |
+| `API_BASE_URL`                                                       | Server-side public API base including `/api/v1`                           |
+| `CATALOG_INCLUDE_SYNTHETIC`                                          | API demo grants opt-in; false by default, always false in production      |
 | `RUN_DB_TESTS`                                                       | Set to `1` to include the real PostgreSQL pytest check                    |
 
 For Supabase, securely supply the Dashboard's direct or session-pooler URL, retain
@@ -102,7 +104,7 @@ ingestion and helper scripts; mypy checks the API and strict TypeScript checks w
 Pytest covers the API, Vitest/Testing Library cover filtering and navigation links,
 and unittest covers all seven ingestion adapters. Database tests are not cached.
 CI runs PR/main checks plus migrations and runtime outage/recovery against Compose.
-An actual GitHub-hosted run remains unverified until the files are pushed.
+Actual GitHub workflow evidence is recorded in the phase audit and PR.
 
 Alembic's initial revision establishes history; revisions through `0004_quality`
 now add the catalog/provenance schema and native search indexes.
@@ -159,9 +161,33 @@ claims, review work and reference-only media. It also copies the seven candidate
 source definitions as disabled/pending rows. All source adapters remain disabled.
 Synthetic UUIDv5 fixture keys are fixed and never derived from display names.
 
-Existing operational API responses and frontend mocks are unchanged. Catalog
-endpoints and the separate Fraggy PWA client mapping are a later phase; no source
-payload, copyrighted description or image is exposed by new API routes.
+## Phase 2B public catalog
+
+Seven GET routes expose brands, fragrance UUID details, ranked search, notes and
+accords under `/api/v1`. See [public API](docs/public-api.md) and the separate
+[Fraggy integration contract](docs/fraggy-integration.md). Browser pages use actual
+API data; failures show error states, never fixture fallbacks. Operational metadata
+now identifies phase `2B`; `/health` and `/ready` contracts are unchanged.
+
+To view **invented local demo data**, explicitly publish fixture grants and start
+with the development-only opt-in (never use this against production):
+
+```sh
+.venv/bin/python -m fraggy_api.seed --allow-demo-data --publish-demo-catalog
+CATALOG_INCLUDE_SYNTHETIC=true pnpm dev
+# Optional end-to-end fixture + outage verification; owns temporary servers:
+.venv/bin/python scripts/smoke.py --manage-services --check-db-outage --demo-catalog
+```
+
+The original seed command does not publish anything. Both commands preserve
+existing rows and edits. The 120-ID public fixture includes explicit grants for
+original invented names/relationships only; edited fields fail closed until reviewed.
+Every production field requires a selected, known, current-value claim, field
+redistribution evidence, approved record rights and reviewed source policy. Raw
+records, licensing evidence, descriptions, reviews and media have no public DTO fields.
+No migration was added or rewritten in Phase 2B.
+
+- [Phase 2B audit](docs/phase-2b-audit.md)
 
 - [Database schema and ER diagram](docs/database-schema.md)
 - [Data dictionary and contracts](docs/data-dictionary.md)

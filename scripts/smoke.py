@@ -1,6 +1,7 @@
 """Real HTTP checks, optionally owning temporary API/web processes and a DB outage."""
 
 import argparse
+import json
 import os
 import signal
 import socket
@@ -49,13 +50,31 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--manage-services", action="store_true")
     parser.add_argument("--check-db-outage", action="store_true")
+    parser.add_argument("--demo-catalog", action="store_true")
     args = parser.parse_args()
+    if args.demo_catalog:
+        if not args.manage_services:
+            raise SystemExit("--demo-catalog requires owned --manage-services")
+        subprocess.run(
+            [
+                str(ROOT / ".venv/bin/python"),
+                "-m",
+                "fraggy_api.seed",
+                "--allow-demo-data",
+                "--publish-demo-catalog",
+            ],
+            cwd=ROOT,
+            check=True,
+        )
     processes: list[subprocess.Popen[bytes]] = []
     try:
         with tempfile.TemporaryFile() as logs:
             if args.manage_services:
                 for port in (3000, 8000):
                     with socket.socket() as probe:
+                        # Ignore sockets in TIME_WAIT from a previous owned run,
+                        # while still refusing any actively listening server.
+                        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                         try:
                             probe.bind(("127.0.0.1", port))
                         except OSError as exc:
@@ -84,6 +103,13 @@ def main() -> None:
                             stdout=logs,
                             stderr=logs,
                             start_new_session=True,
+                            env={
+                                **os.environ,
+                                "CATALOG_INCLUDE_SYNTHETIC": "true"
+                                if args.demo_catalog
+                                else "false",
+                                "API_BASE_URL": "http://127.0.0.1:8000/api/v1",
+                            },
                         )
                     )
             try:
@@ -97,17 +123,36 @@ def main() -> None:
                 check("http://127.0.0.1:8000/ready", 200, '"status":"ready"')
                 check("http://127.0.0.1:8000/api/v1", 200, "FraggyAPI")
                 check("http://127.0.0.1:8000/docs", 200, "swagger-ui")
+                status, body = request("http://127.0.0.1:8000/api/v1/fragrances")
+                assert status == 200
+                catalog = json.loads(body)
+                if args.demo_catalog:
+                    assert catalog["pagination"]["total"] == 4
+                    assert all(item["synthetic"] for item in catalog["data"])
                 for path, content in [
                     ("/", "A world of scent."),
-                    ("/fragrances", "Santal No. 04"),
-                    ("/fragrances/santal-no-04", "Cardamom"),
-                    ("/fragrances/figue-sauvage", "Fig leaf"),
-                    ("/brands", "Atelier Vert"),
+                    ("/fragrances", "Find your next"),
+                    ("/brands", "The houses."),
                     ("/fragrances?q=not-a-real-scent", "No scents found"),
                 ]:
                     check("http://127.0.0.1:3000" + path, 200, content)
+                if catalog["data"]:
+                    item = catalog["data"][0]
+                    check(
+                        "http://127.0.0.1:3000/fragrances/" + item["id"],
+                        200,
+                        item["name"],
+                    )
+                    check(
+                        "http://127.0.0.1:3000/fragrances?q=Paper", 200, "Paper Horizon"
+                    )
                 check(
                     "http://127.0.0.1:3000/fragrances/unknown-scent",
+                    404,
+                    "A little off the trail.",
+                )
+                check(
+                    "http://127.0.0.1:3000/fragrances/00000000-0000-0000-0000-000000000001",
                     404,
                     "A little off the trail.",
                 )

@@ -913,3 +913,22 @@ em {
     scroll-behavior: auto !important;
   }
 }
+
+.select-filters {
+  flex-wrap: wrap;
+}
+.select-filters input[type="number"] {
+  width: 6rem;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+}
+.catalog-pagination {
+  display: flex;
+  gap: 2rem;
+  margin-block: 2rem;
+}
+.note-pyramid small {
+  overflow-wrap: anywhere;
+}

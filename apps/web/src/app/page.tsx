@@ -3,8 +3,10 @@ import { ArrowRight, ArrowDownRight, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Bottle } from "@/components/bottle";
 import { FragranceCard } from "@/components/fragrance-card";
-import { fragrances } from "@/lib/mock-data";
-export default function Home() {
+import { getFragrances } from "@/lib/api";
+export const dynamic = "force-dynamic";
+export default async function Home() {
+  const { data: fragrances } = await getFragrances({ limit: "4" });
   return (
     <>
       <section className="hero shell">
@@ -28,7 +30,7 @@ export default function Home() {
               name="q"
               type="search"
               aria-label="Search the collection"
-              placeholder="A fragrance, a note, a feeling…"
+              placeholder="A fragrance or a house…"
             />
             <Button type="submit" size="icon" aria-label="Search">
               <ArrowRight size={20} />
@@ -42,7 +44,12 @@ export default function Home() {
         <div className="hero-art">
           <span className="art-corner">THE SCENT EDIT — 001</span>
           <div className="art-ring" />
-          <Bottle color="#c9b58f" accent="#60503b" name="Santal No. 04" large />
+          <Bottle
+            color="#c9b58f"
+            accent="#60503b"
+            name={fragrances[0]?.name ?? "Discovery"}
+            large
+          />
           <div className="art-caption">
             <div>
               <p className="eyebrow">THE QUIET EXPRESSION</p>
@@ -53,8 +60,12 @@ export default function Home() {
               </h2>
             </div>
             <Link
-              href="/fragrances/santal-no-04"
-              aria-label="Discover Santal No. 04"
+              href={
+                fragrances[0]
+                  ? `/fragrances/${fragrances[0].id}`
+                  : "/fragrances"
+              }
+              aria-label="Discover the collection"
             >
               <ArrowDownRight size={30} />
             </Link>
@@ -86,9 +97,15 @@ export default function Home() {
             </Link>
           </Button>
         </div>
+        {!fragrances.length && (
+          <p className="empty-state">
+            No public fragrances yet. The collection will appear here when
+            reviewed data is available.
+          </p>
+        )}
         <div className="fragrance-grid featured-grid">
           {fragrances.slice(0, 4).map((f) => (
-            <FragranceCard key={f.slug} fragrance={f} />
+            <FragranceCard key={f.id} fragrance={f} />
           ))}
         </div>
       </section>
@@ -101,12 +118,12 @@ export default function Home() {
         </h2>
         <Button asChild>
           <Link href="/brands">
-            Meet the imagined houses <ArrowRight size={17} />
+            Meet the houses <ArrowRight size={17} />
           </Link>
         </Button>
         <p className="demo-note">
-          An independent design study using fictional perfumes and original
-          bottle illustrations.
+          Original bottle illustrations. Synthetic entries are labeled demo
+          data.
         </p>
       </section>
     </>

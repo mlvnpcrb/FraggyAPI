@@ -46,7 +46,10 @@ def demo_id(key: str) -> UUID:
 
 
 async def seed_demo(
-    session: AsyncSession, *, allow_demo_data: bool = False
+    session: AsyncSession,
+    *,
+    allow_demo_data: bool = False,
+    publish_demo_catalog: bool = False,
 ) -> dict[str, UUID]:
     if not allow_demo_data:
         raise ValueError("Synthetic seed requires explicit allow_demo_data=True")
@@ -243,6 +246,86 @@ async def seed_demo(
         source_url="https://example.invalid/reference-only.svg",
         attribution="Invented reference only; no file exists or was downloaded.",
     )
+    if publish_demo_catalog:
+        # Only original fixture values receive grants; edited DB rows are never
+        # granted new rights by this operation. All inserts preserve existing rows.
+        original_rows = list(rows)
+        row(
+            DataSource,
+            "public-source",
+            key="synthetic-public-demo",
+            name="Invented public catalog",
+            website="https://example.invalid/demo",
+            source_type="synthetic",
+            authorization_status="synthetic",
+            licensing_status="synthetic",
+            enabled=False,
+        )
+        row(
+            SourceRecord,
+            "public-record",
+            source_id=demo_id("public-source"),
+            source_record_id="invented-catalog-v1",
+            collected_at=COLLECTED_AT,
+            storage_status="synthetic",
+            redistribution_status="synthetic",
+            processing_state="linked",
+        )
+        targets = {
+            Brand: "brand_id",
+            Fragrance: "fragrance_id",
+            FragranceRelease: "release_id",
+            Note: "note_id",
+            Accord: "accord_id",
+        }
+        for model, values in original_rows:
+            if model not in targets:
+                continue
+            identity = str(values["id"])
+            link_key = "public-link:" + identity
+            row(
+                SourceEntityLink,
+                link_key,
+                source_record_id=demo_id("public-record"),
+                review_status="approved",
+                **{targets[model]: values["id"]},
+            )
+            fields = {
+                key: value
+                for key, value in values.items()
+                if key
+                in {
+                    "name",
+                    "slug",
+                    "brand_id",
+                    "fragrance_id",
+                    "concentration",
+                    "release_year",
+                }
+                and value is not None
+            }
+            if model is FragranceRelease:
+                for field, association, key in [
+                    ("notes", ReleaseNote, "note_id"),
+                    ("accords", ReleaseAccord, "accord_id"),
+                ]:
+                    fields[field] = [
+                        str(v[key])
+                        for m, v in original_rows
+                        if m is association and v["release_id"] == values["id"]
+                    ]
+            for field, value in fields.items():
+                row(
+                    FieldProvenance,
+                    f"public-claim:{identity}:{field}",
+                    entity_link_id=demo_id(link_key),
+                    field_path=field,
+                    value=str(value) if isinstance(value, UUID) else value,
+                    value_state="known",
+                    selection_status="selected",
+                    usage_rights_status="synthetic",
+                    collected_at=COLLECTED_AT,
+                )
     for model, values in rows:
         await session.execute(
             insert(model).values(**values).on_conflict_do_nothing(index_elements=["id"])
@@ -255,6 +338,11 @@ async def main() -> None:
         description="Opt-in local synthetic catalog; never production data"
     )
     parser.add_argument("--allow-demo-data", action="store_true")
+    parser.add_argument(
+        "--publish-demo-catalog",
+        action="store_true",
+        help="Add explicit synthetic public projection grants",
+    )
     args = parser.parse_args()
     settings = Settings()
     if not args.allow_demo_data or settings.app_env == "production":
@@ -272,7 +360,11 @@ async def main() -> None:
     engine = create_engine(settings)
     try:
         async with async_sessionmaker(engine)() as session, session.begin():
-            ids = await seed_demo(session, allow_demo_data=True)
+            ids = await seed_demo(
+                session,
+                allow_demo_data=True,
+                publish_demo_catalog=args.publish_demo_catalog,
+            )
         print(
             f"Synthetic fixtures prepared ({len(ids)} stable IDs); existing rows preserved"
         )

@@ -24,6 +24,9 @@ def create_engine(settings: Settings) -> AsyncEngine:
         max_overflow=2,
         connect_args={
             "timeout": settings.database_timeout_seconds,
+            "server_settings": {
+                "statement_timeout": str(int(settings.database_timeout_seconds * 1000))
+            },
             "statement_cache_size": 0,
             "prepared_statement_cache_size": 0,
         },
