@@ -85,14 +85,31 @@ inspect/results → approve new → explicitly publish → public API → proven
 reimport → revoke. A second smoke proves failure after an earlier committed batch,
 then safe resume. Only test-owned databases are dropped; no application reset.
 
+Direct root `pnpm catalog:import -- ... --dry-run` and
+`pnpm catalog:manage -- pending ...` invocations also passed; the fictional source
+had no trusted review in the application DB and the preview reported only hashes
+and `rights_review_required`, with zero canonical writes. Explicit registry/DB
+checks confirmed all seven website sources remain disabled and pending review.
+
+Cloud `start_skill` instructions were updated and saved as a draft, including
+operator trust boundaries, non-production CLI scope, safe startup and disposable
+CLI smoke guidance. Install/network/credential settings were preserved. Draft
+persistence is not environment publication or a production deployment.
+
 ## GitHub verification
 
 CI is configured for the feature branch and PR, with frozen dependency setup,
 PostgreSQL-backed tests (including CLI smoke), lint/types/format, production build,
-migration integrity, HTTP outage/recovery and secret scanning. Actual workflow
-results are required after pushing; local results alone are not a remote success
-claim. Final feature-head workflow links and result belong in the PR/completion
-report. Phase 2C must remain unmerged pending separate approval.
+migration integrity, HTTP outage/recovery and secret scanning. Actual GitHub Actions passed on implementation head
+`3ba48ad2705410750842353315a2f102a570188a`:
+
+- [PR workflow 39118761209](https://github.com/mlvnpcrb/FraggyAPI/actions/runs/39118761209): SUCCESS.
+- [Branch workflow 39118718353](https://github.com/mlvnpcrb/FraggyAPI/actions/runs/39118718353): SUCCESS.
+
+The [Phase 2C PR #3](https://github.com/mlvnpcrb/FraggyAPI/pull/3) checks panel is the
+authoritative result for final/subsequent documentation heads. Completion requires
+an actual successful workflow on the reported final SHA; earlier/local results
+alone cannot validate a newer commit. Phase 2C remains unmerged pending approval.
 
 ## Limitations
 
