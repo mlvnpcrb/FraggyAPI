@@ -15,6 +15,7 @@ from .catalog import (
     ReleaseNote,
     ReleasePerfumer,
 )
+from .collection import CollectionRun, CollectionSource
 from .provenance import (
     DataReviewQueue,
     DataSource,
@@ -26,6 +27,8 @@ from .provenance import (
 )
 
 __all__ = [
+    "CollectionRun",
+    "CollectionSource",
     "Accord",
     "Brand",
     "BrandAlias",

@@ -98,8 +98,13 @@ async def test_seed_is_opt_in_idempotent_and_preserves_edits(
             == counts[name]
         )
     assert all(
-        counts.values()
-    )  # Every catalog/provenance table has a synthetic example.
+        value
+        for name, value in counts.items()
+        if name not in {"collection_sources", "collection_runs"}
+    )
+    # Existing catalog/provenance examples remain complete; seeding must never
+    # configure or activate a collector as a side effect.
+    assert counts["collection_sources"] == counts["collection_runs"] == 0
 
 
 @pytest.mark.parametrize(
@@ -362,7 +367,8 @@ async def test_foreign_keys_restrict_deletion(
 
 
 def test_all_metadata_foreign_keys_use_restrict() -> None:
-    assert len(Base.metadata.tables) == 20
+    assert len(Base.metadata.tables) == 22
+    assert {"collection_sources", "collection_runs"} <= set(Base.metadata.tables)
     assert all(
         fk.ondelete == "RESTRICT"
         for table in Base.metadata.tables.values()

@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [main, feat/phase-2e-catalog-data]
+    branches: [main, feat/phase-2f-collection]
 permissions:
   contents: read
 concurrency:
@@ -48,6 +48,8 @@ jobs:
           .venv/bin/alembic -c apps/api/alembic.ini upgrade head
           .venv/bin/alembic -c apps/api/alembic.ini current
           .venv/bin/alembic -c apps/api/alembic.ini check
+      - name: Synthetic scheduled collection demonstration
+        run: .venv/bin/python scripts/demo_collection.py
       - name: Runtime smoke and database outage recovery
         run: .venv/bin/python scripts/smoke.py --manage-services --check-db-outage --demo-catalog
       - name: Secret patterns

@@ -264,3 +264,21 @@ and ignored. No paid search or hosted services are introduced; development remai
 - [JSON/text report contract](docs/catalog-quality-report.md)
 - [Local performance methodology/results](docs/phase-2e-performance.md)
 - [Phase 2E verification](docs/phase-2e-audit.md)
+
+## Phase 2F local collection
+
+The authorized collector integrates with existing import, manual review, provenance,
+attribution and quality commands. Collection/schedules and external network are off
+by default; all seven website skeletons remain disabled. No real source was approved.
+
+```bash
+pnpm catalog:collect -- list
+pnpm catalog:collect -- quality
+.venv/bin/python scripts/demo_collection.py
+```
+
+The explicit demo uses only original fictional local HTTP metadata and a UUID-owned
+disposable database. See [architecture](docs/phase-2f-architecture.md),
+[authorization](docs/collector-authorization.md), [operations](docs/collector-operations.md)
+and [audit](docs/phase-2f-audit.md). Never install a real-source schedule or supply
+external-network opt-in without a separately approved source-specific pilot.

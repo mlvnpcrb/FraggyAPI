@@ -2,6 +2,10 @@
 
 ## Boundaries and phase
 
+- Phase 2F adds explicitly reviewed, disabled-by-default automated collection to
+  the existing import/review/publication system. External network remains off by
+  default; never activate real collection or the seven website skeletons in this task.
+  Durable collection policies, leases and checkpoints do not authorize publication.
 - Phase 2E adds read-only catalog quality reports, source/license research and
   disposable synthetic PostgreSQL benchmarks to the reviewed attribution/import
   foundation and trusted local operator review,
