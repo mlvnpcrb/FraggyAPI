@@ -22,7 +22,15 @@ class CollectionError(ValueError):
 
 class Endpoint(Strict):
     url: str = Field(max_length=2048)
-    adapter: Literal["rest_json", "json_feed", "csv_feed", "html_json"]
+    adapter: Literal[
+        "rest_json", "json_feed", "csv_feed", "html_json", "wikidata_sparql"
+    ]
+    entity_ids: list[str] = Field(
+        default_factory=list, max_length=300, exclude_if=lambda v: not v
+    )
+    user_agent: str | None = Field(
+        default=None, max_length=250, exclude_if=lambda v: v is None
+    )
     field_map: dict[str, str] = Field(default_factory=dict, max_length=30)
     credential_env: str | None = Field(
         default=None, pattern=r"^FRAGGY_COLLECTOR_[A-Z0-9_]{1,70}$"
@@ -33,6 +41,38 @@ class Endpoint(Strict):
     backoff_seconds: float = Field(default=1, ge=0.01, le=30)
     max_pages: int = Field(default=10, ge=1, le=100)
     max_records: int = Field(default=1000, ge=1, le=1000)
+
+    @model_validator(mode="after")
+    def wikidata_configuration(self) -> "Endpoint":
+        import re
+
+        if self.adapter == "wikidata_sparql":
+            if (
+                not self.entity_ids
+                or len(set(self.entity_ids)) != len(self.entity_ids)
+                or any(
+                    not re.fullmatch(r"Q[1-9][0-9]{0,15}", i) for i in self.entity_ids
+                )
+                or self.max_pages < (len(self.entity_ids) + 24) // 25
+                or self.max_records < len(self.entity_ids)
+                or self.field_map
+                or self.credential_env
+                or not self.user_agent
+                or not re.fullmatch(
+                    r"FraggyAPI/[0-9.]+ \(https://github.com/mlvnpcrb/FraggyAPI; [A-Za-z0-9_.+@-]+\)",
+                    self.user_agent,
+                )
+                or (
+                    self.url != "https://query.wikidata.org/sparql"
+                    and not self.url.startswith("http://127.0.0.1:")
+                )
+            ):
+                raise ValueError(
+                    "Reviewed Wikidata IDs and contact User-Agent required"
+                )
+        elif self.entity_ids or self.user_agent:
+            raise ValueError("Source-specific configuration on wrong adapter")
+        return self
 
     @field_validator("field_map")
     @classmethod
@@ -121,6 +161,13 @@ class Grant(Strict):
                 )
         elif p.scheme != "https":
             raise ValueError("External collection requires HTTPS")
+        elif (
+            self.endpoint.adapter == "wikidata_sparql"
+            and self.endpoint.minimum_interval_seconds < 1
+        ):
+            raise ValueError(
+                "External Wikidata pilot requires at least one second between requests"
+            )
         return self
 
 

@@ -104,3 +104,13 @@ incomplete reports and ambiguous candidates manually. Endpoint schemas are limit
 to the documented envelopes and embedded-JSON HTML: custom auth, cursor protocols,
 arbitrary HTML layouts, webhooks, robots fetching and browser rendering need
 source-specific implementation/review rather than guessed extraction.
+
+## Phase 2G source and media operators
+
+The new `wikidata_sparql` adapter uses a reviewed list of entity IDs and bounded
+fixed queries. It does not authorize a live pilot. Follow
+[the integration guide](phase-2g-integration.md) and complete
+[the explicit approval package](first-real-data-pilot.md) first. Media storage,
+publication and cleanup are independent local commands documented in
+[media operations](fragrance-media-architecture.md). Source withdrawal must cover
+metadata, the collector and image assets; verify byte 404s and run media GC.

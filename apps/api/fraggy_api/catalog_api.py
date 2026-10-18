@@ -1,5 +1,6 @@
 """Bounded read-only PostgreSQL catalog queries and allowlisted responses."""
 
+from pathlib import Path
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.sql.elements import ColumnElement
 
 from .database import get_session
+from .media.service import attach_media
 from .models import (
     Accord,
     Brand,
@@ -32,6 +34,7 @@ from .public_catalog import (
 )
 from .public_credits import attach_credits
 from .public_rights import Access, read_access
+from .settings import Settings
 
 
 class ErrorDetail(BaseModel):
@@ -138,7 +141,7 @@ def fragrance_visible(demo: Access) -> ColumnElement[bool]:
 
 
 async def project(
-    session: AsyncSession, rows: Any, demo: Access
+    session: AsyncSession, rows: Any, demo: Access, media_root: Path | None = None
 ) -> list[FragrancePublic]:
     """Five catalog queries plus policy/credit queries, independent of page length.
 
@@ -296,11 +299,15 @@ async def project(
     ]
 
     await attach_credits(session, projected, demo)
+    await attach_media(session, projected, demo, media_root or Settings().media_root)
     return projected
 
 
 async def catalog(
-    session: AsyncSession, params: CatalogQuery, demo: Access
+    session: AsyncSession,
+    params: CatalogQuery,
+    demo: Access,
+    media_root: Path | None = None,
 ) -> Page[FragrancePublic]:
     f, b, r = Fragrance, Brand, FragranceRelease
     conditions = [fragrance_visible(demo)]
@@ -405,7 +412,7 @@ async def catalog(
         )
     ).all()
     return Page(
-        data=await project(session, rows, demo),
+        data=await project(session, rows, demo, media_root),
         pagination=Pagination(
             limit=params.limit, offset=params.offset, total=total or 0
         ),
@@ -417,7 +424,10 @@ async def fragrances(
     request: Request, session: Session, params: Annotated[CatalogQuery, Query()]
 ) -> Page[FragrancePublic]:
     return await catalog(
-        session, params, await read_access(session, demo_enabled(request))
+        session,
+        params,
+        await read_access(session, demo_enabled(request)),
+        request.app.state.settings.media_root,
     )
 
 
@@ -429,7 +439,10 @@ async def search(
     if not params.q:
         raise HTTPException(400, "Search requires a nonblank q")
     return await catalog(
-        session, params, await read_access(session, demo_enabled(request))
+        session,
+        params,
+        await read_access(session, demo_enabled(request)),
+        request.app.state.settings.media_root,
     )
 
 
@@ -450,7 +463,7 @@ async def fragrance(
             .where(Fragrance.id == id, fragrance_visible(demo))
         )
     ).all()
-    data = await project(session, rows, demo)
+    data = await project(session, rows, demo, request.app.state.settings.media_root)
     if not data:
         raise HTTPException(404, "Fragrance not found")
     return Item(data=data[0])

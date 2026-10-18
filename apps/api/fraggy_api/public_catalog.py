@@ -8,6 +8,7 @@ from sqlalchemy import and_, exists, false, func, or_, select
 from sqlalchemy.sql.elements import ColumnElement
 
 from .attribution import PublicAttribution
+from .media.service import ImagePublic, VariantImages
 from .models import DataSource, FieldProvenance, SourceEntityLink, SourceRecord
 from .public_rights import FILE_TYPES, Access
 
@@ -25,6 +26,9 @@ class NamedPublic(PublicModel):
 
 
 class ReleasePublic(PublicModel):
+    primary_image: ImagePublic | None = None
+    images: list[ImagePublic] = Field(default_factory=list)
+    variant_images: list[VariantImages] = Field(default_factory=list)
     id: UUID
     concentration: str | None
     release_year: int | None
@@ -35,6 +39,8 @@ class ReleasePublic(PublicModel):
 
 
 class FragrancePublic(NamedPublic):
+    primary_image: ImagePublic | None = None
+    images: list[ImagePublic] = Field(default_factory=list)
     brand: NamedPublic
     releases: list[ReleasePublic]
     releases_truncated: bool

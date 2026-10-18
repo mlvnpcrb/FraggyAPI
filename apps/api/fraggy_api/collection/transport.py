@@ -61,7 +61,7 @@ class HTTPTransport:
         headers = {
             "Accept": "application/json, text/csv, text/html",
             "Accept-Encoding": "identity",
-            "User-Agent": "FraggyAPI-authorized-collector/0.1",
+            "User-Agent": endpoint.user_agent or "FraggyAPI-authorized-collector/0.1",
         }
         if endpoint.credential_env:
             credential = os.getenv(endpoint.credential_env)
@@ -93,6 +93,10 @@ class HTTPTransport:
         query = {
             k: v for k, v in (("cursor", cursor), ("since", since)) if v is not None
         }
+        if endpoint.adapter == "wikidata_sparql":
+            from .wikidata import query as wikidata_query
+
+            query = {"query": wikidata_query(endpoint, cursor), "format": "json"}
         path = (parsed.path or "/") + ("?" + urlencode(query) if query else "")
 
         def interrupt() -> None:

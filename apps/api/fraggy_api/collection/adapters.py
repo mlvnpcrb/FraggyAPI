@@ -56,7 +56,19 @@ def token(value: Any) -> str | None:
     return value
 
 
-def extract(body: bytes, endpoint: Endpoint, content_type: str) -> Page:
+def extract(
+    body: bytes, endpoint: Endpoint, content_type: str, cursor: str | None = None
+) -> Page:
+    if endpoint.adapter == "wikidata_sparql":
+        from .wikidata import records as wikidata_records
+
+        if content_type.split(";", 1)[0].strip().lower() not in {
+            "application/sparql-results+json",
+            "application/json",
+        }:
+            raise CollectionError("unexpected_content_type")
+        wikidata_rows, next_cursor = wikidata_records(body, endpoint, cursor)
+        return Page(wikidata_rows, next_cursor)
     try:
         if len(body) > MAX_BYTES:
             raise CollectionError("response_too_large")

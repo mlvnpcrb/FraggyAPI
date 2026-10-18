@@ -352,7 +352,9 @@ class Collector:
                     break
                 if response.status != 200:
                     raise CollectionError("http_status_denied")
-                page = extract(response.body, grant.endpoint, response.content_type)
+                page = extract(
+                    response.body, grant.endpoint, response.content_type, cursor
+                )
                 if page.next_cursor in visited and page.next_cursor is not None:
                     raise CollectionError("pagination_cycle")
                 assessment = assess(page.records)

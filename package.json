@@ -16,6 +16,7 @@
     "catalog:import": ".venv/bin/python -m fraggy_api.importing.cli import",
     "catalog:manage": ".venv/bin/python -m fraggy_api.importing.cli",
     "catalog:quality": ".venv/bin/python -m fraggy_api.quality.cli",
+    "catalog:media": ".venv/bin/python -m fraggy_api.media.cli",
     "catalog:collect": ".venv/bin/python -m fraggy_api.collection.cli"
   },
   "devDependencies": {
