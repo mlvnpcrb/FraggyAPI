@@ -2,10 +2,16 @@
 
 ## Boundaries and phase
 
-- Phase 2B adds read-only catalog endpoints and the Next.js API client on the
-  Phase 2A catalog/provenance schema. Do not add writes, automatic matching,
-  ingestion orchestration, live collection or Phase 3 without an explicit task.
-  Preserve operational health/readiness checks.
+- Phase 2C adds bounded CSV/JSON/JSONL imports and trusted local operator review,
+  on the Phase 2A schema and Phase 2B read-only public API. Keep parsing, matching,
+  staging, canonical review and field publication separate. No automatic merge,
+  website collection, public admin/upload route, Phase 2D or Phase 3 without a task.
+  Preserve operational health/readiness and all earlier phase tests.
+- Manifest flags are untrusted: only an explicit operator-reviewed manifest digest
+  in PostgreSQL authorizes storage; publication requires a separate record decision.
+  Quarantine unverified inputs as hashes/metadata only, never raw payloads.
+  Operator commands stay non-production/loopback in this phase. Real datasets,
+  private evidence/manifests and reports must not be committed.
 - `apps/web` is Next.js App Router; `apps/api` is FastAPI. Browser code must never
   import Python, database credentials or server environment configuration.
 - Web pages use the typed public API client in `apps/web/src/lib/api.ts`; never

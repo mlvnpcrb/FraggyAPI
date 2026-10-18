@@ -20,3 +20,9 @@ test-results/
 *.tsbuildinfo
 .DS_Store
 apps/web/next-env.d.ts
+
+# Real datasets, private manifests and operator reports stay out of Git.
+/data/private/
+/data/imports/
+/data/reports/
+*.import-report.json

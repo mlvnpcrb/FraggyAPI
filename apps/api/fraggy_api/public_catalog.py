@@ -77,7 +77,7 @@ def grant(
         FieldProvenance,
     )
     approved = and_(
-        source.source_type != "synthetic",
+        source.source_type.not_in(["synthetic", "synthetic_file_import"]),
         source.authorization_status == "approved",
         source.licensing_status == "approved",
         source.reviewed_at.is_not(None),
@@ -89,7 +89,7 @@ def grant(
         claim.usage_rights_status == "approved",
     )
     synthetic = and_(
-        source.source_type == "synthetic",
+        source.source_type.in_(["synthetic", "synthetic_file_import"]),
         source.authorization_status == "synthetic",
         source.licensing_status == "synthetic",
         record.storage_status == "synthetic",
