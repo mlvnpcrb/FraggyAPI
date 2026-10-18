@@ -1,5 +1,10 @@
 # Licensed local data import
 
+> Phase 2D extends this Phase 2C baseline with explicitly reviewed structured
+> attribution. Follow [the attribution contract](attribution-contract.md) and
+> [the pilot workflow](pilot-import-workflow.md) for attributed sources; old
+> unattributed manifests retain their digest and behavior.
+
 Phase 2C adds trusted **local CLI** imports, not a public upload endpoint or a
 website scraper. Parsing, authorization, normalization/matching, transactional
 staging, canonical writing and publication are separate modules under

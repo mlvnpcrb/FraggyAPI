@@ -1,3 +1,4 @@
+import { SourceCredits } from "./source-credits";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import {
@@ -117,6 +118,15 @@ export function Directory({
           <Button type="submit">Search</Button>
         </div>
       </form>
+      <SourceCredits
+        credits={[
+          ...new Map(
+            [...brands, ...notes, ...accords]
+              .flatMap((item) => item.attributions ?? [])
+              .map((credit) => [credit.id, credit]),
+          ).values(),
+        ]}
+      />
       <div className="results-caption">
         <p aria-live="polite">
           {total} {total === 1 ? "fragrance" : "fragrances"}

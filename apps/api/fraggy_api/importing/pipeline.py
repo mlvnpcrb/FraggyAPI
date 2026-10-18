@@ -15,6 +15,7 @@ from ..models import (
     SourceEntityLink,
     SourceRecord,
 )
+from ..public_rights import reviewed_attribution
 from .authorization import actor, check_storage, policy, source_for, writer_lock
 from .formats import ImportErrorSafe, Manifest, Record, digest
 from .matching import candidates
@@ -295,7 +296,7 @@ async def publish(
     if (
         snapshot.processing_state != "linked"
         or source.licensing_status not in {"approved", "synthetic"}
-        or manifest.attribution_requirements
+        or not reviewed_attribution(source)[0]
     ):
         raise ImportErrorSafe("Reviewed linked record and publication policy required")
     fields = sorted(set(fields))
@@ -303,6 +304,7 @@ async def publish(
         raise ImportErrorSafe(
             "Explicit publication fields must be allowed by operator-reviewed source policy"
         )
+    await verify_current_claims(session, snapshot.id, fields)
     evidence_id = uuid4()
     evidence = f"operator_publication:{evidence_id}"
     links = select(SourceEntityLink.id).where(
@@ -346,3 +348,113 @@ async def publish(
         "publication_fields": fields,
         "approved_claims": getattr(result, "rowcount", 0),
     }
+
+
+async def verify_current_claims(
+    session: AsyncSession, record_id: UUID, fields: list[str]
+) -> None:
+    """Reject stale selected claims at publication, not only at public read time."""
+    from ..models import (
+        Accord,
+        Brand,
+        Fragrance,
+        FragranceRelease,
+        Note,
+        ReleaseAccord,
+        ReleaseNote,
+    )
+
+    targets = {
+        "brand_id": Brand,
+        "fragrance_id": Fragrance,
+        "release_id": FragranceRelease,
+        "note_id": Note,
+        "accord_id": Accord,
+    }
+    rows = (
+        await session.execute(
+            select(FieldProvenance, SourceEntityLink)
+            .join(SourceEntityLink)
+            .where(
+                SourceEntityLink.source_record_id == record_id,
+                SourceEntityLink.review_status == "approved",
+                FieldProvenance.selection_status == "selected",
+                FieldProvenance.value_state == "known",
+                FieldProvenance.field_path.in_(fields),
+            )
+        )
+    ).all()
+    for claim, link in rows:
+        for target, model in targets.items():
+            identity = getattr(link, target)
+            if identity is None:
+                continue
+            entity = await session.get(model, identity)
+            if entity is None:
+                raise ImportErrorSafe("Canonical target missing")
+            field = claim.field_path
+            if field in entity.__mapper__.column_attrs:
+                current = getattr(entity, field)
+                if isinstance(current, UUID):
+                    current = str(current)
+                matches = current == claim.value
+            elif target == "release_id" and field in {"notes", "accords"}:
+                association = ReleaseNote if field == "notes" else ReleaseAccord
+                column = (
+                    ReleaseNote.note_id if field == "notes" else ReleaseAccord.accord_id
+                )
+                current_ids = (
+                    await session.scalars(
+                        select(column).where(association.release_id == identity)
+                    )
+                ).all()
+                matches = sorted(set(map(str, current_ids))) == sorted(claim.value)
+            else:
+                raise ImportErrorSafe("Unsupported public claim field")
+            if not matches:
+                raise ImportErrorSafe("Stale canonical claim requires manual re-review")
+
+
+async def unpublish(
+    session: AsyncSession,
+    record_id: UUID,
+    fields: list[str],
+    reviewer: str,
+    reason: str,
+) -> dict[str, Any]:
+    actor(reviewer, reason)
+    await writer_lock(session)
+    snapshot = await session.get(SourceRecord, record_id)
+    source = await session.get(DataSource, snapshot.source_id) if snapshot else None
+    if (
+        source is None
+        or source.source_type not in {"file_import", "synthetic_file_import"}
+        or not fields
+        or len(fields) > 40
+        or any(not f.strip() or len(f) > 200 for f in fields)
+    ):
+        raise ImportErrorSafe("File-import snapshot and explicit fields required")
+    links = select(SourceEntityLink.id).where(
+        SourceEntityLink.source_record_id == record_id
+    )
+    await session.execute(
+        update(FieldProvenance)
+        .where(
+            FieldProvenance.entity_link_id.in_(links),
+            FieldProvenance.field_path.in_(fields),
+        )
+        .values(usage_rights_status="restricted")
+    )
+    session.add(
+        DataReviewQueue(
+            source_record_id=record_id,
+            reason="Field publication revoked",
+            status="resolved",
+            reviewer=reviewer,
+            resolution=reason,
+            resolved_at=datetime.now(UTC),
+            context={"decision": "unpublish", "fields": sorted(set(fields))},
+        )
+    )
+    await session.flush()
+    return {"record_id": str(record_id), "revoked_fields": sorted(set(fields))}

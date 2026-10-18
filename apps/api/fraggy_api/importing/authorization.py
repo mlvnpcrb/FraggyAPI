@@ -88,6 +88,7 @@ async def review_source(
     *,
     allow_storage: bool,
     publish_fields: list[str],
+    accept_attribution: bool = False,
 ) -> DataSource:
     actor(reviewer, reason)
     await writer_lock(session)
@@ -96,7 +97,16 @@ async def review_source(
     if publish_fields and (
         not allow_storage
         or not manifest.redistribution_permissions
-        or manifest.attribution_requirements
+        or manifest.redistribution_conditions
+        or (manifest.attribution_requirements and manifest.attribution is None)
+        or (
+            manifest.attribution is not None
+            and (
+                not accept_attribution
+                or not manifest.attribution.supported()
+                or manifest.attribution.provider != manifest.provider
+            )
+        )
     ):
         raise ImportErrorSafe(
             "Publication requires storage, redistribution and a supported attribution policy"
@@ -113,6 +123,7 @@ async def review_source(
         "reason": reason,
         "at": now.isoformat(),
         "storage": allow_storage,
+        "attribution_accepted": bool(manifest.attribution and accept_attribution),
         "publication_fields": sorted(set(publish_fields)),
         "manifest": manifest.model_dump(mode="json"),
     }

@@ -16,13 +16,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.exceptions import HTTPException
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
 from .catalog_api import router as catalog_router
-from .database import create_engine, get_session
+from .database import create_engine, get_session, request_session_factory
 from .settings import Settings
 
 logger = logging.getLogger("fraggy.api")
@@ -52,7 +52,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         engine = create_engine(config)
-        app.state.session_factory = async_sessionmaker(engine, expire_on_commit=False)
+        app.state.session_factory = request_session_factory(engine)
         try:
             yield
         finally:

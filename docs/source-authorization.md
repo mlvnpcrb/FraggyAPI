@@ -1,5 +1,10 @@
 # Source authorization and publication rights
 
+> Phase 2D extends this Phase 2C baseline with explicitly reviewed structured
+> attribution. Follow [the attribution contract](attribution-contract.md) and
+> [the pilot workflow](pilot-import-workflow.md) for attributed sources; old
+> unattributed manifests retain their digest and behavior.
+
 A dataset's file and manifest are untrusted input. A license name/URL, provider
 assertion, `authorization_status: approved`, or `storage_permissions: true` is
 **never sufficient authority**. None of those values can activate a website adapter
@@ -55,10 +60,10 @@ operator command. Include both source names (`brand_name`, `fragrance_name`) and
 permitted derived public fields (`name`, `slug`, `brand_id`, `fragrance_id`) when the
 reviewed license supports that transformation/publication.
 
-Omit `--publish-fields` for private storage-only imports. Mandatory attribution is
-recorded but not yet supported in public DTOs: such sources may be stored/reviewed
-with permission, but publication is refused. This fails closed instead of silently
-dropping required credits. Explicit `--deny-storage` withdraws future raw storage
+Omit `--publish-fields` for private storage-only imports. Phase 2D supports
+mandatory attribution only with complete structured public metadata and explicit
+`--accept-attribution`; unsupported obligations still refuse publication. See
+[the attribution contract](attribution-contract.md). Explicit `--deny-storage` withdraws future raw storage
 and purges stored raw snapshot payloads for that source, retaining minimal audit
 metadata/provenance for review. Independently review retention requirements for
 existing canonical/audit metadata; the CLI does not claim a universal deletion law.

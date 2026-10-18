@@ -1,3 +1,4 @@
+import { SourceCredits } from "@/components/source-credits";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -61,6 +62,7 @@ export default async function FragrancePage({
             <p>No public release information available.</p>
           )}
           {f.releases_truncated && <p>Showing the first 20 public releases.</p>}
+          <SourceCredits credits={f.attributions} />
           <Link
             className="brand-link"
             href={`/fragrances?brand=${encodeURIComponent(f.brand.slug)}`}

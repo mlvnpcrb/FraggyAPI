@@ -3,11 +3,13 @@
 from typing import Any, Generic, TypeVar
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import and_, exists, false, func, or_, select
 from sqlalchemy.sql.elements import ColumnElement
 
+from .attribution import PublicAttribution
 from .models import DataSource, FieldProvenance, SourceEntityLink, SourceRecord
+from .public_rights import FILE_TYPES, Access
 
 
 class PublicModel(BaseModel):
@@ -19,6 +21,7 @@ class NamedPublic(PublicModel):
     name: str
     slug: str
     synthetic: bool
+    attributions: list[PublicAttribution] = Field(default_factory=list)
 
 
 class ReleasePublic(PublicModel):
@@ -28,6 +31,7 @@ class ReleasePublic(PublicModel):
     notes: list[NamedPublic]
     accords: list[NamedPublic]
     synthetic: bool
+    attributions: list[PublicAttribution] = Field(default_factory=list)
 
 
 class FragrancePublic(NamedPublic):
@@ -54,12 +58,65 @@ class Item(PublicModel, Generic[T]):
     data: T
 
 
+def rights_condition(
+    demo: Access, *, synthetic_only: bool = False
+) -> ColumnElement[bool]:
+    source, record, claim = DataSource, SourceRecord, FieldProvenance
+    source_policy = or_(
+        source.id.in_(list(demo.sources)),
+        and_(
+            source.source_type.not_in(FILE_TYPES),
+            func.jsonb_array_length(source.reuse_restrictions) == 0,
+        ),
+    )
+    approved = and_(
+        source.source_type.not_in(["synthetic", "synthetic_file_import"]),
+        source.authorization_status == "approved",
+        source.licensing_status == "approved",
+        source.reviewed_at.is_not(None),
+        func.jsonb_array_length(source.evidence) > 0,
+        source.permitted_fields.contains(func.jsonb_build_array(claim.field_path)),
+        source_policy,
+        record.storage_status == "approved",
+        record.redistribution_status == "approved",
+        claim.usage_rights_status == "approved",
+    )
+    synthetic = and_(
+        source.source_type.in_(["synthetic", "synthetic_file_import"]),
+        source.authorization_status == "synthetic",
+        source.licensing_status == "synthetic",
+        record.storage_status == "synthetic",
+        record.redistribution_status == "synthetic",
+        claim.usage_rights_status == "synthetic",
+    )
+    enabled = demo.demo
+    rights = (
+        synthetic
+        if synthetic_only
+        else or_(approved, synthetic)
+        if enabled
+        else approved
+    )
+    if synthetic_only and not enabled:
+        rights = false()
+    # The synthetic branch must also satisfy reviewed attribution policy.
+    rights = and_(
+        rights,
+        source_policy,
+        or_(
+            source.source_type.not_in(FILE_TYPES),
+            source.permitted_fields.contains(func.jsonb_build_array(claim.field_path)),
+        ),
+    )
+    return rights
+
+
 def grant(
     target: str,
     identity: Any,
     field: str,
     value: Any,
-    demo: bool,
+    demo: Access,
     *,
     contains: bool = False,
     synthetic_only: bool = False,
@@ -76,31 +133,7 @@ def grant(
         SourceEntityLink,
         FieldProvenance,
     )
-    approved = and_(
-        source.source_type.not_in(["synthetic", "synthetic_file_import"]),
-        source.authorization_status == "approved",
-        source.licensing_status == "approved",
-        source.reviewed_at.is_not(None),
-        func.jsonb_array_length(source.evidence) > 0,
-        source.permitted_fields.contains([field]),
-        func.jsonb_array_length(source.reuse_restrictions) == 0,
-        record.storage_status == "approved",
-        record.redistribution_status == "approved",
-        claim.usage_rights_status == "approved",
-    )
-    synthetic = and_(
-        source.source_type.in_(["synthetic", "synthetic_file_import"]),
-        source.authorization_status == "synthetic",
-        source.licensing_status == "synthetic",
-        record.storage_status == "synthetic",
-        record.redistribution_status == "synthetic",
-        claim.usage_rights_status == "synthetic",
-    )
-    rights = (
-        synthetic if synthetic_only else or_(approved, synthetic) if demo else approved
-    )
-    if synthetic_only and not demo:
-        rights = false()
+    rights = rights_condition(demo, synthetic_only=synthetic_only)
     comparison = (
         claim.value.contains(func.jsonb_build_array(value))
         if contains
@@ -125,7 +158,7 @@ def grant(
     )
 
 
-def visible(model: Any, target: str, demo: bool) -> ColumnElement[bool]:
+def visible(model: Any, target: str, demo: Access) -> ColumnElement[bool]:
     return and_(
         grant(target, model.id, "name", model.name, demo),
         grant(target, model.id, "slug", model.slug, demo),

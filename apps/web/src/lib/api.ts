@@ -1,9 +1,25 @@
+export type Attribution = {
+  id: string;
+  provider: string;
+  text: string;
+  source_url: string;
+  license_name: string;
+  license_url: string;
+  copyright_holder: string | null;
+  placement: "adjacent_record";
+  modification_disclosure_required: boolean;
+  modification_disclosure: string | null;
+  redistribution_conditions: string[];
+  last_verified: string;
+  fields: string[];
+};
 /** Public DTOs only. Imported by server components; no database settings here. */
 export type NamedEntity = {
   id: string;
   name: string;
   slug: string;
   synthetic: boolean;
+  attributions?: Attribution[];
 };
 export type Release = {
   id: string;
@@ -12,6 +28,7 @@ export type Release = {
   notes: NamedEntity[];
   accords: NamedEntity[];
   synthetic: boolean;
+  attributions?: Attribution[];
 };
 export type Fragrance = NamedEntity & {
   brand: NamedEntity;

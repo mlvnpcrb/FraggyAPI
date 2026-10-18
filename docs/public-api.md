@@ -123,7 +123,7 @@ existing edits and conflicting candidate years. No startup/migration inserts dat
 
 ## Bounds, search and caching
 
-A page executes five SQL statements when nonempty: count, root rows, bounded
+The Phase 2B baseline executes five catalog SQL statements when nonempty: count, root rows, bounded
 releases, bounded notes and bounded accords. There are no per-record lazy loads.
 At most 20 releases per fragrance and 50 note/accord associations per release are
 read, using SQL window bounds. `releases_truncated` signals the release limit;
@@ -145,3 +145,21 @@ Catalog responses set `Cache-Control: no-store`. Next.js server requests use
 `cache: 'no-store'` with a 5-second timeout, so rights revocation is not hidden behind
 a persistent app cache. No public CDN cache, ETag or offline redistribution license
 is implied. See the Fraggy integration contract for consumer expectations.
+
+## Phase 2D additive attribution
+
+Every named record and release now includes an `attributions` array (empty when
+no credit is required). Existing fields, routes, filters, pagination and error
+contracts remain. Fragrances aggregate credits with relative JSON-pointer field
+paths for their displayed subtree; nested DTOs carry their own local credits.
+See [the complete attribution contract](attribution-contract.md) for safe public
+metadata, deduplication, multiple providers, consumer obligations and limits.
+Private evidence, reviewer identities and source snapshots remain excluded.
+
+File-import policy validation adds one fixed query per request; attributed pages
+add one bounded credit query. Fragrance pages use six queries without attribution
+and seven with attribution, independent of page length. Existing SQL bounds and
+PostgreSQL indexes remain. No migration is needed: structured attribution stays
+in the existing operator-reviewed manifest/evidence JSON, separate from canonical
+records. New optional manifest fields are omitted when empty, preserving old
+Phase 2C manifest digests.

@@ -24,7 +24,7 @@ from ..models import (
 from ..settings import Settings
 from .authorization import review_source, revoke
 from .formats import ImportErrorSafe, manifest_file, parse_file
-from .pipeline import decide, preview, publish, stage
+from .pipeline import decide, preview, publish, stage, unpublish
 
 
 class ImportBatchFailure(ImportErrorSafe):
@@ -52,6 +52,7 @@ def parser() -> argparse.ArgumentParser:
     storage.add_argument("--allow-storage", action="store_true", dest="allow_storage")
     storage.add_argument("--deny-storage", action="store_false", dest="allow_storage")
     source.add_argument("--publish-fields", default="")
+    source.add_argument("--accept-attribution", action="store_true")
     revocation = commands.add_parser("revoke")
     revocation.add_argument("--source", required=True)
     review = commands.add_parser("review")
@@ -65,7 +66,10 @@ def parser() -> argparse.ArgumentParser:
     publication = commands.add_parser("publish")
     publication.add_argument("--record-id", type=UUID, required=True)
     publication.add_argument("--fields", required=True)
-    for command in (source, revocation, review, publication):
+    withdrawal = commands.add_parser("unpublish")
+    withdrawal.add_argument("--record-id", type=UUID, required=True)
+    withdrawal.add_argument("--fields", required=True)
+    for command in (source, revocation, review, publication, withdrawal):
         command.add_argument("--reviewer", required=True)
         command.add_argument("--reason", required=True)
     pending = commands.add_parser("pending")
@@ -143,6 +147,7 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
                     args.reviewer,
                     args.reason,
                     allow_storage=args.allow_storage,
+                    accept_attribution=args.accept_attribution,
                     publish_fields=[
                         s.strip() for s in args.publish_fields.split(",") if s.strip()
                     ],
@@ -161,8 +166,9 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
                     args.reason,
                     args.target_release,
                 )
-            if args.command == "publish":
-                return await publish(
+            if args.command in {"publish", "unpublish"}:
+                action = publish if args.command == "publish" else unpublish
+                return await action(
                     session,
                     args.record_id,
                     [s.strip() for s in args.fields.split(",") if s.strip()],

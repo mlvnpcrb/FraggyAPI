@@ -932,3 +932,27 @@ em {
 .note-pyramid small {
   overflow-wrap: anywhere;
 }
+
+.source-credits {
+  margin-block: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+}
+.source-credits h2 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+.source-credits ul {
+  list-style: none;
+  padding: 0;
+}
+.source-credits li + li {
+  margin-top: 0.75rem;
+}
+.source-credits a {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}

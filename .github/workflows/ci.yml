@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [main, feat/phase-2c-data-import]
+    branches: [main, feat/phase-2d-attribution]
 permissions:
   contents: read
 concurrency:

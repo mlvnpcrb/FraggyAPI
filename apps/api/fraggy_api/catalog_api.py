@@ -29,6 +29,8 @@ from .public_catalog import (
     grant,
     visible,
 )
+from .public_credits import attach_credits
+from .public_rights import Access, read_access
 
 
 class ErrorDetail(BaseModel):
@@ -102,7 +104,7 @@ def named(model: Any, synthetic: bool) -> NamedPublic:
     )
 
 
-def synthetic_flag(model: Any, target: str, demo: bool) -> ColumnElement[bool]:
+def synthetic_flag(model: Any, target: str, demo: Access) -> ColumnElement[bool]:
     flags = [
         grant(target, model.id, field, getattr(model, field), demo, synthetic_only=True)
         for field in ("name", "slug")
@@ -116,7 +118,7 @@ def synthetic_flag(model: Any, target: str, demo: bool) -> ColumnElement[bool]:
     return or_(*flags)
 
 
-def release_visible(demo: bool) -> ColumnElement[bool]:
+def release_visible(demo: Access) -> ColumnElement[bool]:
     return grant(
         "release_id",
         FragranceRelease.id,
@@ -126,7 +128,7 @@ def release_visible(demo: bool) -> ColumnElement[bool]:
     )
 
 
-def fragrance_visible(demo: bool) -> ColumnElement[bool]:
+def fragrance_visible(demo: Access) -> ColumnElement[bool]:
     return and_(
         visible(Fragrance, "fragrance_id", demo),
         visible(Brand, "brand_id", demo),
@@ -135,9 +137,9 @@ def fragrance_visible(demo: bool) -> ColumnElement[bool]:
 
 
 async def project(
-    session: AsyncSession, rows: Any, demo: bool
+    session: AsyncSession, rows: Any, demo: Access
 ) -> list[FragrancePublic]:
-    """Five fixed queries per page, independent of the number of fragrances.
+    """Five catalog queries plus policy/credit queries, independent of page length.
 
     Each fragrance has at most 20 releases; each release has at most 50 notes and
     accords. Window bounds apply in SQL, including to unexpectedly large catalogs.
@@ -271,7 +273,7 @@ async def project(
                 ),
             )
         )
-    return [
+    projected = [
         FragrancePublic(
             **named(
                 fragrance,
@@ -288,9 +290,12 @@ async def project(
         for fragrance, brand, synthetic, brand_synthetic in rows
     ]
 
+    await attach_credits(session, projected, demo)
+    return projected
+
 
 async def catalog(
-    session: AsyncSession, params: CatalogQuery, demo: bool
+    session: AsyncSession, params: CatalogQuery, demo: Access
 ) -> Page[FragrancePublic]:
     f, b, r = Fragrance, Brand, FragranceRelease
     conditions = [fragrance_visible(demo)]
@@ -389,7 +394,9 @@ async def catalog(
 async def fragrances(
     request: Request, session: Session, params: Annotated[CatalogQuery, Query()]
 ) -> Page[FragrancePublic]:
-    return await catalog(session, params, demo_enabled(request))
+    return await catalog(
+        session, params, await read_access(session, demo_enabled(request))
+    )
 
 
 # Register before the UUID route so 'search' is never parsed as a UUID.
@@ -399,14 +406,16 @@ async def search(
 ) -> Page[FragrancePublic]:
     if not params.q:
         raise HTTPException(400, "Search requires a nonblank q")
-    return await catalog(session, params, demo_enabled(request))
+    return await catalog(
+        session, params, await read_access(session, demo_enabled(request))
+    )
 
 
 @router.get("/fragrances/{id}", response_model=Item[FragrancePublic])
 async def fragrance(
     id: UUID, request: Request, session: Session
 ) -> Item[FragrancePublic]:
-    demo = demo_enabled(request)
+    demo = await read_access(session, demo_enabled(request))
     rows = (
         await session.execute(
             select(
@@ -426,7 +435,7 @@ async def fragrance(
 
 
 async def lookup(
-    model: Any, target: str, params: LookupQuery, session: AsyncSession, demo: bool
+    model: Any, target: str, params: LookupQuery, session: AsyncSession, demo: Access
 ) -> Page[NamedPublic]:
     base = select(model, synthetic_flag(model, target, demo)).where(
         visible(model, target, demo)
@@ -447,8 +456,10 @@ async def lookup(
             .offset(params.offset)
         )
     ).all()
+    projected = [named(entity, synthetic) for entity, synthetic in rows]
+    await attach_credits(session, projected, demo, target=target)
     return Page(
-        data=[named(entity, synthetic) for entity, synthetic in rows],
+        data=projected,
         pagination=Pagination(
             limit=params.limit, offset=params.offset, total=total or 0
         ),
@@ -459,12 +470,18 @@ async def lookup(
 async def brands(
     request: Request, session: Session, params: Annotated[LookupQuery, Query()]
 ) -> Page[NamedPublic]:
-    return await lookup(Brand, "brand_id", params, session, demo_enabled(request))
+    return await lookup(
+        Brand,
+        "brand_id",
+        params,
+        session,
+        await read_access(session, demo_enabled(request)),
+    )
 
 
 @router.get("/brands/{slug}", response_model=Item[NamedPublic])
 async def brand(slug: str, request: Request, session: Session) -> Item[NamedPublic]:
-    demo = demo_enabled(request)
+    demo = await read_access(session, demo_enabled(request))
     row = (
         await session.execute(
             select(Brand, synthetic_flag(Brand, "brand_id", demo)).where(
@@ -474,18 +491,32 @@ async def brand(slug: str, request: Request, session: Session) -> Item[NamedPubl
     ).first()
     if not row:
         raise HTTPException(404, "Brand not found")
-    return Item(data=named(row[0], row[1]))
+    projected = [named(row[0], row[1])]
+    await attach_credits(session, projected, demo, target="brand_id")
+    return Item(data=projected[0])
 
 
 @router.get("/notes", response_model=Page[NamedPublic])
 async def notes(
     request: Request, session: Session, params: Annotated[LookupQuery, Query()]
 ) -> Page[NamedPublic]:
-    return await lookup(Note, "note_id", params, session, demo_enabled(request))
+    return await lookup(
+        Note,
+        "note_id",
+        params,
+        session,
+        await read_access(session, demo_enabled(request)),
+    )
 
 
 @router.get("/accords", response_model=Page[NamedPublic])
 async def accords(
     request: Request, session: Session, params: Annotated[LookupQuery, Query()]
 ) -> Page[NamedPublic]:
-    return await lookup(Accord, "accord_id", params, session, demo_enabled(request))
+    return await lookup(
+        Accord,
+        "accord_id",
+        params,
+        session,
+        await read_access(session, demo_enabled(request)),
+    )

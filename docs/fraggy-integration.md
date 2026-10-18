@@ -96,3 +96,14 @@ mobile/desktop share the same contract. Its dropdowns show only the first 50 pub
 brands/notes/accords; the brand directory itself is paginated. A later UI can use
 paginated lookup/autocomplete without changing the API. The current UI selects one
 note and accord at a time; direct API consumers may repeat these filters.
+
+## Phase 2D consumer update
+
+The separate Fraggy PWA has not been modified. Its integration must preserve and
+render the new public `attributions` arrays beside every displayed record and
+lookup/filter value, including multiple providers and modification disclosures.
+[Attribution contract](attribution-contract.md) defines fields, relative JSON
+pointers, safe links, additive compatibility and revocation refresh requirements.
+Do not infer licensing from a label or discard credits while combining records.
+The repository Next.js frontend demonstrates cards, details, brands and filter
+credits; empty arrays add no UI panel.

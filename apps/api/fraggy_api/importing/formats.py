@@ -18,6 +18,8 @@ from pydantic import (
     model_validator,
 )
 
+from ..attribution import Attribution
+
 MAX_BYTES = 2 * 1024 * 1024
 MAX_ROWS = 1000
 Name = Annotated[str, StringConstraints(min_length=1, max_length=200)]
@@ -153,6 +155,12 @@ class Manifest(Strict):
     permitted_fields: list[Name] = Field(default_factory=list, max_length=40)
     attribution_requirements: list[Name] = Field(default_factory=list, max_length=20)
     license_evidence_references: list[Name] = Field(min_length=1, max_length=20)
+    attribution: Attribution | None = Field(
+        default=None, exclude_if=lambda v: v is None
+    )
+    redistribution_conditions: list[Name] = Field(
+        default_factory=list, max_length=20, exclude_if=lambda v: not v
+    )
     review_date: str | None = Field(default=None, max_length=40)
 
 

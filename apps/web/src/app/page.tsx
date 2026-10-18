@@ -1,3 +1,4 @@
+import { SourceCredits } from "@/components/source-credits";
 import Link from "next/link";
 import { ArrowRight, ArrowDownRight, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ export default async function Home() {
             name={fragrances[0]?.name ?? "Discovery"}
             large
           />
+          <SourceCredits credits={fragrances[0]?.attributions} />
           <div className="art-caption">
             <div>
               <p className="eyebrow">THE QUIET EXPRESSION</p>
