@@ -1,6 +1,6 @@
 # FraggyAPI
 
-Phase 2B connects a Next.js fragrance discovery site to a read-only, rights-aware
+Phase 2C adds trusted licensed-file import and catalog review to the Next.js fragrance discovery site to a read-only, rights-aware
 FastAPI catalog on PostgreSQL. The Phase 2A schema and seven disabled ingestion
 adapters are preserved. Live scraping, paid services and deployments remain disabled.
 
@@ -192,3 +192,28 @@ No migration was added or rewritten in Phase 2B.
 - [Database schema and ER diagram](docs/database-schema.md)
 - [Data dictionary and contracts](docs/data-dictionary.md)
 - [Phase 2A verification audit](docs/phase-2a-audit.md)
+
+## Phase 2C licensed file import
+
+CSV, JSON and JSONL are supported through a trusted local CLI, not an HTTP upload.
+File-declared approval is never authority. Reviewed storage, canonical decisions
+and field publication are separate; unverified files retain only quarantine hashes.
+Synthetic examples always stay excluded in production. No migrations or new
+infrastructure/dependencies were required; seven website adapters remain disabled.
+
+```sh
+pnpm catalog:import -- --file data/examples/fragrances.csv --manifest data/examples/source-manifest.json --dry-run
+pnpm catalog:manage pending --source fictional-workshop-import
+RUN_DB_TESTS=1 .venv/bin/python -m pytest apps/api/tests/test_import_cli.py -v
+```
+
+- [File schemas, limits, counters and safe batch resumption](docs/data-import.md)
+- [Trusted source authorization and revocation](docs/source-authorization.md)
+- [Operator decisions and complete fictional example](docs/catalog-review-workflow.md)
+- [Phase 2C audit](docs/phase-2c-audit.md)
+
+The operator CLI refuses production/non-loopback targets. Real files/manifests and
+reports belong outside Git or under ignored `data/private`, `data/imports` or
+`data/reports`. Public API v1/operational contracts remain unchanged; the API phase
+metadata still describes the Phase 2B public interface. There is no Phase 2D,
+subscription, deployment, separate PWA change or live scraping in this phase.

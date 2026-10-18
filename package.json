@@ -12,7 +12,9 @@
     "test": "turbo run test && .venv/bin/python -m unittest discover -v",
     "typecheck": "turbo run typecheck",
     "format:check": "prettier --check .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "catalog:import": ".venv/bin/python -m fraggy_api.importing.cli import",
+    "catalog:manage": ".venv/bin/python -m fraggy_api.importing.cli"
   },
   "devDependencies": {
     "turbo": "2.11.9",
