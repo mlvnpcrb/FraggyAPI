@@ -27,6 +27,8 @@ Environment: Python 3.12.14; Linux 6.18.55 x86_64/glibc 2.41; 5 CPUs reported by
 under existing Docker Compose. PostgreSQL reports shared_buffers=16384 8-KiB pages
 (128 MiB), work_mem=4096 KiB (4 MiB), max_connections=100. Existing statement timeout
 remained **3 seconds per statement**; no timeout/rights checks were disabled.
+Application connections explicitly set `jit=off`; the artifact records this
+effective setting. Database-wide configuration is unchanged.
 No test/build jobs intentionally ran concurrently with this final timed run. The
 development machine remains shared; CPU allocation, caches and run-to-run
 variation are practical limitations.
@@ -69,11 +71,11 @@ cold-cache conclusions are supported.
 
 ## Final observed latency (milliseconds)
 
-| Fragrances | Search median / p95   | Filter median / p95   | Pagination median / p95 | SELECTs per request |
-| ---------- | --------------------- | --------------------- | ----------------------- | ------------------- |
-| 100        | 190.923 / 229.985     | 224.155 / 321.878     | 216.153 / 313.062       | 7 / 7 / 7           |
-| 1,000      | 349.382 / 398.106     | 408.144 / 454.417     | 368.019 / 446.899       | 7 / 7 / 7           |
-| 10,000     | 2,308.081 / 2,325.956 | 3,646.243 / 3,753.290 | 2,358.626 / 2,405.216   | 7 / 7 / 7           |
+| Fragrances | Search median / p95   | Filter median / p95 | Pagination median / p95 | SELECTs per request |
+| ---------- | --------------------- | ------------------- | ----------------------- | ------------------- |
+| 100        | 153.765 / 199.136     | 176.562 / 241.142   | 189.459 / 244.824       | 7 / 7 / 7           |
+| 1,000      | 273.034 / 312.807     | 211.837 / 293.160   | 273.872 / 394.846       | 7 / 7 / 7           |
+| 10,000     | 1,489.604 / 1,551.479 | 560.622 / 657.415   | 1,613.872 / 1,675.858   | 7 / 7 / 7           |
 
 All 45 final timed requests completed without failures/timeouts, plus warm-ups and
 separate memory/plan requests. Seven SELECTs cover source policy, total, root rows,
@@ -81,11 +83,11 @@ bounded releases, notes, accords and credits. Transaction/isolation driver comma
 are outside that SELECT count. Fixed query count does **not** imply fixed work.
 The 3-second statement timeout is per statement, not the entire request.
 
-Separate Python allocation peaks: approximately 2.08–2.39 MiB per request across
-these scenarios. Process maximum RSS after each size was 84.6 / 101.4 / 348.4 MiB;
+Separate Python allocation peaks: approximately 2.10–2.57 MiB per request across
+these scenarios. Process maximum RSS after each size was 85.3 / 101.4 / 348.5 MiB;
 that high-water mark includes fixture generation, interpreter/driver buffers and
 prior scenarios, not just one request. PostgreSQL/container memory was not profiled.
-Fixture generation + inserts + ANALYZE took about 0.91 / 6.44 / 65.22 seconds.
+Fixture generation + inserts + ANALYZE took about 0.89 / 6.92 / 66.91 seconds.
 
 ## Actual EXPLAIN observations
 
@@ -98,12 +100,12 @@ Observed at 10,000 fragrances:
 
 | Scenario / statement    | Top node  | Execution ms | Shared hits / reads | Temp read / written blocks |
 | ----------------------- | --------- | ------------ | ------------------- | -------------------------- |
-| Search count (#2)       | Aggregate | 288.555      | 342420 / 0          | 0 / 0                      |
-| Search credits (#7)     | Limit     | 934.293      | 1163635 / 0         | 658 / 659                  |
-| Filter count (#2)       | Aggregate | 2202.977     | 1052232 / 0         | 0 / 0                      |
-| Filter credits (#7)     | Limit     | 126.031      | 50962 / 0           | 0 / 0                      |
-| Pagination count (#2)   | Aggregate | 531.378      | 572420 / 0          | 0 / 0                      |
-| Pagination credits (#7) | Limit     | 1025.679     | 1163635 / 0         | 658 / 659                  |
+| Search count (#2)       | Aggregate | 149.926      | 192402 / 0          | 0 / 0                      |
+| Search credits (#7)     | Limit     | 917.635      | 1163635 / 0         | 658 / 659                  |
+| Filter count (#2)       | Aggregate | 125.699      | 129039 / 0          | 0 / 0                      |
+| Filter credits (#7)     | Limit     | 131.229      | 50962 / 0           | 0 / 0                      |
+| Pagination count (#2)   | Aggregate | 275.416      | 372402 / 0          | 0 / 0                      |
+| Pagination credits (#7) | Limit     | 929.427      | 1163635 / 0         | 658 / 659                  |
 
 Plans include bitmap/index/index-only scans using source-entity target indexes,
 `ix_provenance_link_field`, source-record/source primary keys, release-fragrance
@@ -137,13 +139,26 @@ Intermittent final CI failures also reproduced locally in release and note
 projection under the un-analyzed shared test catalog. Those projections now read
 directly from page-scoped materialized rows without rejoining the full entity
 table. Rights checks and window limits remain unchanged. The full local suite and
-both implementation workflows passed afterward; the measurements above were
-rerun on this corrected query implementation, including all 63 complete plans.
+both implementation workflows passed afterward, but later final-head runs exposed
+another timeout. An after-failure EXPLAIN captured the filter-count rights checks
+flattened into twelve semi-joins with underestimated cardinalities, without JIT.
+The shared grant query now retains a correlated per-entity existence check using
+an `OFFSET 0` planner boundary. Permission predicates and timeouts are unchanged.
+The measurements above were rerun on this corrected query implementation,
+including all 63 complete plans.
+
+After preserving per-entity grants, a measured 10,000-record note plan spent
+2374.184 ms compiling JIT code out of 2388.634 ms execution. A later pagination
+warm-up timed out under the unchanged 3-second statement budget. Application
+connections now disable JIT to avoid compiler-cost thresholds dominating these
+bounded queries. The final measurements above use that setting; this earlier
+failed run is retained locally as `phase2e-benchmark-grant-jit-before.json`.
+The direct un-analyzed regression fixture does not disable JIT or raise its guard.
 
 ## Remaining performance limits
 
 A 100–300-record pilot is the next controlled data target, not a readiness claim
-for public production traffic. At 10,000 fictional records, multi-second latency,
+for public production traffic. At 10,000 fictional records, search/pagination latency,
 credit sort spills and rights-join work remain material. Synthetic regularity,
 single-source provenance, warm caches and sequential local requests do not model
 heterogeneous production rights graphs, network/pooler overhead, concurrent writes,

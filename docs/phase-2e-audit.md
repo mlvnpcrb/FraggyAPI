@@ -83,6 +83,26 @@ local tests passed after this correction. CI now emits sanitized failing test
 identifiers and exception categories from JUnit, with `PYTEST_ADDOPTS` explicitly
 forwarded through Turbo. It never annotates assertion contents or private inputs.
 
+The subsequent final-head workflows still failed that fixture, so the projection
+change alone was insufficient. A probe captured EXPLAIN only after a reproduced
+timeout, rolling back an inner savepoint to retain the original fictional rows.
+The failing filter-count plan had eleven nested-loop semi-joins and one hash
+semi-join, with heavily underestimated cardinalities (root cost 346.51); it had no
+JIT plan. The shared grant query now uses an `OFFSET 0` planner boundary so each
+permission remains a correlated per-entity existence check instead of being
+flattened into that join graph. This preserves the exact permission predicate,
+current-value comparison and public fields. The unchanged full local suite passed
+all 256 cases after this correction. Temporary probe code was removed.
+
+That grant correction passed both GitHub workflows. Repeating the larger benchmark
+then exposed a separate compiler-cost threshold: note projection spent 2374.184 ms
+in JIT compilation out of 2388.634 ms execution, and pagination later timed out.
+Application-created PostgreSQL connections now explicitly use `jit=off`, avoiding
+that compilation overhead for bounded requests. Statement timeouts, rights and
+database-wide settings are unchanged. The fixture's direct session still tests
+un-analyzed grants with native PostgreSQL settings. The full 256 local tests passed
+after this connection setting; the benchmark records the effective JIT setting.
+
 ## Local results
 
 | Check                 | Command/evidence                                                              | Result                                                                                                                                     |
@@ -124,11 +144,11 @@ pending; no source is legally cleared by a clean quality report.
 ## Performance and remaining limits
 
 See [measured performance and EXPLAIN evidence](phase-2e-performance.md).
-At 10,000 fictional fragrances, observed medians were 2308.081 ms search,
-3646.243 ms combined filter and 2358.626 ms pagination. Each has seven SELECTs;
+At 10,000 fictional fragrances, observed medians were 1489.604 ms search,
+560.622 ms combined filter and 1613.872 ms pagination. Each has seven SELECTs;
 local warm sequential measurements exclude HTTP/browser overhead. The largest
 fixture has 21,000 releases, 42,000 variants and 235,000 claim rows. Credit sorts
-still spill and multi-second rights work remains material. This does not establish
+still spill and rights/credit query work remains material. This does not establish
 production capacity or justify an SLA. Generated raw plans/reports stay ignored.
 
 Quality analysis is bounded; prefix/name similarity does not prove identity.
@@ -162,6 +182,15 @@ implementation head `29616b3aaf6adf54c7bb5651cb6ef53b9a2d1236` passed both
 [branch workflow](https://github.com/mlvnpcrb/FraggyAPI/actions/runs/39133242568).
 The full local 256-test suite and all 45 benchmark samples passed on that code.
 Earlier failed workflows remain visible; they are not treated as successful runs.
+
+Final corrected implementation head
+`c88bfdd59665c9a5fe5dd3db7169a0073167213b` passed
+[PR workflow](https://github.com/mlvnpcrb/FraggyAPI/actions/runs/39134680261) and
+[branch workflow](https://github.com/mlvnpcrb/FraggyAPI/actions/runs/39134677487).
+This includes the per-entity grant boundary and application JIT setting. All 256
+local tests and all 45 refreshed timed samples passed; all 63 final plans have no
+JIT compilation. Lint, strict types, formatting, build and secret scans passed
+again after the final timed run.
 
 The following documentation-only commit records this evidence. The final PR
 Checks tab and completion report identify its exact head and actual workflows;
