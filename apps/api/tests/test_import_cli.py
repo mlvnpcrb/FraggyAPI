@@ -180,6 +180,7 @@ def test_cli_smoke_import_review_publication_and_revoke() -> None:
             "source-review",
             "--manifest",
             "data/examples/source-manifest.json",
+            "--allow-storage",
             "--reviewer",
             "",
             "--reason",

@@ -42,6 +42,9 @@ pnpm catalog:manage source-review \
   --reason 'Reviewed the original fictional fixture and permitted fields'
 ```
 
+Source review requires exactly one of `--allow-storage` and `--deny-storage`;
+omitting a storage action cannot accidentally withdraw/purge existing snapshots.
+
 This stores an `operator_source_review` event in `data_sources.evidence`, including
 reviewer, reason, time, digest and reviewed policy. Import authorization requires
 that DB-owned event, matching digest and current approved storage status. Changing
@@ -55,7 +58,7 @@ reviewed license supports that transformation/publication.
 Omit `--publish-fields` for private storage-only imports. Mandatory attribution is
 recorded but not yet supported in public DTOs: such sources may be stored/reviewed
 with permission, but publication is refused. This fails closed instead of silently
-dropping required credits. Omitting `--allow-storage` withdraws future raw storage
+dropping required credits. Explicit `--deny-storage` withdraws future raw storage
 and purges stored raw snapshot payloads for that source, retaining minimal audit
 metadata/provenance for review. Independently review retention requirements for
 existing canonical/audit metadata; the CLI does not claim a universal deletion law.

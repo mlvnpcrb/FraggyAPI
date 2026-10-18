@@ -30,7 +30,7 @@ branch is `feat/phase-2c-data-import`. No force push/reset or unrelated work rem
   boundary; reviewer strings alone are not authentication.
 - Unverified input stores only hashes and minimal quarantine/run/review metadata;
   no payload, original external ID, source URL or canonical values. Withdrawal of
-  raw storage clears snapshot payloads. Independently verified historical audit
+  raw storage requires explicit `--deny-storage` and clears snapshot payloads. Independently verified historical audit
   metadata is retained privately for review, not automatically published.
 - Field/record/source publication revocation is immediate. Source re-review cannot
   silently restore prior grants. Source policy changes require new snapshot review.
