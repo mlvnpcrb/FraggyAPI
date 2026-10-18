@@ -73,6 +73,16 @@ diagnosis, the eligible-release set was materialized and the full suite passed
 again. The new fixture regression has a statement timeout guard, not an ANALYZE
 that conceals this import state.
 
+Final GitHub checks subsequently exposed an intermittent timeout in the new
+100-record fixture regression, reproduced locally first in release projection
+and then in note projection. Both projections now read directly from page-scoped
+materialized rows rather than rejoining the full entity table. Existing rights,
+current-value comparisons and window limits remain intact; the 10-second test
+guard was not raised and no ANALYZE/retry was added to hide the failure. All 256
+local tests passed after this correction. CI now emits sanitized failing test
+identifiers and exception categories from JUnit, with `PYTEST_ADDOPTS` explicitly
+forwarded through Turbo. It never annotates assertion contents or private inputs.
+
 ## Local results
 
 | Check                 | Command/evidence                                                              | Result                                                                                                                                     |
@@ -114,8 +124,8 @@ pending; no source is legally cleared by a clean quality report.
 ## Performance and remaining limits
 
 See [measured performance and EXPLAIN evidence](phase-2e-performance.md).
-At 10,000 fictional fragrances, observed medians were 2212.763 ms search,
-3645.450 ms combined filter and 2352.527 ms pagination. Each has seven SELECTs;
+At 10,000 fictional fragrances, observed medians were 2308.081 ms search,
+3646.243 ms combined filter and 2358.626 ms pagination. Each has seven SELECTs;
 local warm sequential measurements exclude HTTP/browser overhead. The largest
 fixture has 21,000 releases, 42,000 variants and 235,000 claim rows. Credit sorts
 still spill and multi-second rights work remains material. This does not establish
@@ -145,6 +155,13 @@ Implementation head `5bfdb9b4d63e793b1e5fe773254e5826b4c61afa` passed
 with conclusion SUCCESS. Actual GitHub steps verified frozen dependency setup,
 PostgreSQL tests, lint, strict types, formatting, production build, migration
 integrity, runtime/outage recovery and secret scanning.
+
+After the intermittent projection failure was reproduced and corrected,
+implementation head `29616b3aaf6adf54c7bb5651cb6ef53b9a2d1236` passed both
+[PR workflow](https://github.com/mlvnpcrb/FraggyAPI/actions/runs/39133245969) and
+[branch workflow](https://github.com/mlvnpcrb/FraggyAPI/actions/runs/39133242568).
+The full local 256-test suite and all 45 benchmark samples passed on that code.
+Earlier failed workflows remain visible; they are not treated as successful runs.
 
 The following documentation-only commit records this evidence. The final PR
 Checks tab and completion report identify its exact head and actual workflows;

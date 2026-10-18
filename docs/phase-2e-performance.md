@@ -71,9 +71,9 @@ cold-cache conclusions are supported.
 
 | Fragrances | Search median / p95   | Filter median / p95   | Pagination median / p95 | SELECTs per request |
 | ---------- | --------------------- | --------------------- | ----------------------- | ------------------- |
-| 100        | 172.619 / 211.904     | 288.240 / 336.895     | 192.996 / 276.357       | 7 / 7 / 7           |
-| 1,000      | 356.492 / 402.419     | 383.626 / 448.134     | 351.109 / 478.963       | 7 / 7 / 7           |
-| 10,000     | 2,212.763 / 2,275.902 | 3,645.450 / 3,734.904 | 2,352.527 / 2,382.044   | 7 / 7 / 7           |
+| 100        | 190.923 / 229.985     | 224.155 / 321.878     | 216.153 / 313.062       | 7 / 7 / 7           |
+| 1,000      | 349.382 / 398.106     | 408.144 / 454.417     | 368.019 / 446.899       | 7 / 7 / 7           |
+| 10,000     | 2,308.081 / 2,325.956 | 3,646.243 / 3,753.290 | 2,358.626 / 2,405.216   | 7 / 7 / 7           |
 
 All 45 final timed requests completed without failures/timeouts, plus warm-ups and
 separate memory/plan requests. Seven SELECTs cover source policy, total, root rows,
@@ -81,11 +81,11 @@ bounded releases, notes, accords and credits. Transaction/isolation driver comma
 are outside that SELECT count. Fixed query count does **not** imply fixed work.
 The 3-second statement timeout is per statement, not the entire request.
 
-Separate Python allocation peaks: approximately 2.02–2.33 MiB per request across
-these scenarios. Process maximum RSS after each size was 83.6 / 100.9 / 348.3 MiB;
+Separate Python allocation peaks: approximately 2.08–2.39 MiB per request across
+these scenarios. Process maximum RSS after each size was 84.6 / 101.4 / 348.4 MiB;
 that high-water mark includes fixture generation, interpreter/driver buffers and
 prior scenarios, not just one request. PostgreSQL/container memory was not profiled.
-Fixture generation + inserts + ANALYZE took about 0.99 / 6.85 / 62.63 seconds.
+Fixture generation + inserts + ANALYZE took about 0.91 / 6.44 / 65.22 seconds.
 
 ## Actual EXPLAIN observations
 
@@ -98,12 +98,12 @@ Observed at 10,000 fragrances:
 
 | Scenario / statement    | Top node  | Execution ms | Shared hits / reads | Temp read / written blocks |
 | ----------------------- | --------- | ------------ | ------------------- | -------------------------- |
-| Search count (#2)       | Aggregate | 268.618      | 342420 / 0          | 0 / 0                      |
-| Search credits (#7)     | Limit     | 889.753      | 1163635 / 0         | 658 / 659                  |
-| Filter count (#2)       | Aggregate | 2065.799     | 1052236 / 0         | 0 / 0                      |
-| Filter credits (#7)     | Limit     | 122.710      | 50962 / 0           | 0 / 0                      |
-| Pagination count (#2)   | Aggregate | 476.041      | 572420 / 0          | 0 / 0                      |
-| Pagination credits (#7) | Limit     | 940.322      | 1163635 / 0         | 658 / 659                  |
+| Search count (#2)       | Aggregate | 288.555      | 342420 / 0          | 0 / 0                      |
+| Search credits (#7)     | Limit     | 934.293      | 1163635 / 0         | 658 / 659                  |
+| Filter count (#2)       | Aggregate | 2202.977     | 1052232 / 0         | 0 / 0                      |
+| Filter credits (#7)     | Limit     | 126.031      | 50962 / 0           | 0 / 0                      |
+| Pagination count (#2)   | Aggregate | 531.378      | 572420 / 0          | 0 / 0                      |
+| Pagination credits (#7) | Limit     | 1025.679     | 1163635 / 0         | 658 / 659                  |
 
 Plans include bitmap/index/index-only scans using source-entity target indexes,
 `ix_provenance_link_field`, source-record/source primary keys, release-fragrance
@@ -132,6 +132,13 @@ membership and its grant on the same release. The eligible-release UUID set is
 materialized once per SQL statement to stabilize the plan on un-analyzed imports. Regression tests preserve taxonomy
 rights, concentrations/years and cross-release filtering. No API DTO/route or
 migration was changed by these corrections.
+
+Intermittent final CI failures also reproduced locally in release and note
+projection under the un-analyzed shared test catalog. Those projections now read
+directly from page-scoped materialized rows without rejoining the full entity
+table. Rights checks and window limits remain unchanged. The full local suite and
+both implementation workflows passed afterward; the measurements above were
+rerun on this corrected query implementation, including all 63 complete plans.
 
 ## Remaining performance limits
 
