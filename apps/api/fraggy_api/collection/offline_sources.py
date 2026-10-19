@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from pydantic import Field, model_validator
 
-from ..importing.formats import MAX_BYTES, Record, Strict, bounded
+from ..importing.formats import MAX_BYTES, Record, Strict, bounded, key
 from .adapters import extract
 from .policy import CollectionError, Endpoint
 from .wikidata import entity
@@ -73,6 +73,19 @@ def note_names(value: Any) -> list[str]:
     return value
 
 
+def strength_descriptor(values: dict[str, Any]) -> dict[str, Any]:
+    if (
+        isinstance(values.get("concentration"), str)
+        and key(values["concentration"]) == "elixir"
+    ):
+        metadata = dict(values.get("source_metadata", {}))
+        if metadata.get("strength_label") not in (None, values["concentration"]):
+            raise CollectionError("conflicting_strength_descriptor")
+        metadata["strength_label"] = values["concentration"]
+        values = {**values, "source_metadata": metadata, "concentration": None}
+    return values
+
+
 class FragranticaFixture(OfflineSource):
     source = "fragrantica"
 
@@ -94,19 +107,36 @@ class FragranticaFixture(OfflineSource):
             "gtin": "gtin",
         }
         for row in rows(page, "perfumes"):
-            extras = {"gender_positioning", "longevity", "sillage"}
-            if set(row) - (set(mapping) | {"top", "heart", "base"} | extras):
+            extras = {
+                "gender_positioning",
+                "longevity",
+                "sillage",
+                "manufacturer",
+                "name_alias",
+                "related_fragrance",
+            }
+            if set(row) - (set(mapping) | {"top", "heart", "middle", "base"} | extras):
                 raise CollectionError("unsupported_fixture_field")
             values = {dest: row[key] for key, dest in mapping.items() if key in row}
             values["source_metadata"] = {
                 field: row[field] for field in extras if field in row
             }
+            if "middle" in row:
+                if "heart" in row and note_names(row["heart"]) != note_names(
+                    row["middle"]
+                ):
+                    raise CollectionError("conflicting_note_positions")
+                values["source_metadata"]["note_position_mapping"] = "middle_to_heart"
             values["notes"] = [
                 {"name": name, "position": position}
                 for position in ("top", "heart", "base")
-                for name in note_names(row.get(position, []))
+                for name in note_names(
+                    row.get("middle", row.get("heart", []))
+                    if position == "heart"
+                    else row.get(position, [])
+                )
             ]
-            result.append(Record.model_validate(values))
+            result.append(Record.model_validate(strength_descriptor(values)))
         return result
 
 
@@ -128,14 +158,18 @@ class ParfumoFixture(OfflineSource):
         }
         result = []
         for row in rows(page, "entries"):
-            if set(row) - (set(mapping) | {"notes"}):
+            extras = {"manufacturer", "name_alias", "related_fragrance"}
+            if set(row) - (set(mapping) | {"notes"} | extras):
                 raise CollectionError("unsupported_fixture_field")
             values = {dest: row[key] for key, dest in mapping.items() if key in row}
+            values["source_metadata"] = {
+                field: row[field] for field in extras if field in row
+            }
             values["notes"] = [
                 {"name": name, "position": "unknown"}
                 for name in note_names(row.get("notes", []))
             ]
-            result.append(Record.model_validate(values))
+            result.append(Record.model_validate(strength_descriptor(values)))
         return result
 
 
@@ -144,7 +178,7 @@ class OfficialBrandFixture(OfflineSource):
 
     def parse(self, page: FixturePage) -> list[Record]:
         self.check(page)
-        products = rows(page, "products")
+        products = [strength_descriptor(value) for value in rows(page, "products")]
         endpoint = Endpoint(
             url="http://127.0.0.1:1",
             adapter="json_feed",

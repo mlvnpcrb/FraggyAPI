@@ -99,7 +99,10 @@ class HTTPTransport:
             query = {"query": wikidata_query(endpoint, cursor), "format": "json"}
         path = (parsed.path or "/") + ("?" + urlencode(query) if query else "")
 
+        deadline_reached = threading.Event()
+
         def interrupt() -> None:
+            deadline_reached.set()
             sock = connection.sock
             if sock is not None:
                 try:
@@ -127,7 +130,12 @@ class HTTPTransport:
                 response.getheader("Retry-After"),
             )
         except (OSError, http.client.HTTPException) as exc:
-            raise CollectionError("network_failure") from exc
+            code = (
+                "network_timeout"
+                if isinstance(exc, TimeoutError) or deadline_reached.is_set()
+                else "network_failure"
+            )
+            raise CollectionError(code) from exc
         finally:
             timer.cancel()
             connection.close()

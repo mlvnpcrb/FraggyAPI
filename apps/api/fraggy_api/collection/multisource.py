@@ -9,6 +9,7 @@ from pydantic import Field, model_validator
 
 from ..importing.formats import Record, Strict, concentration, digest, key
 from ..quality.duplicates import classify_pair
+from .intelligence import indexed_review
 from .offline_sources import ADAPTERS, FixturePage
 from .policy import CollectionError
 
@@ -267,6 +268,13 @@ def rehearse(
         "record_count": len(observations),
         "changes": changes,
         "comparison": compare(observations),
+        "intelligence": indexed_review(
+            (
+                (identifier, digest([value.source, value.dataset]), value.record)
+                for identifier, value in state.records.items()
+            ),
+            max_pairs=MAX_PAIRS,
+        ),
         "quality": {
             identifier: completeness(value.record)
             for identifier, value in state.records.items()
