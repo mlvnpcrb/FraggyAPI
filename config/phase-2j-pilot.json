@@ -1,0 +1,8 @@
+{
+  "quantity": 25,
+  "enabled": false,
+  "live_discovery_approved": false,
+  "live_collection_approved": false,
+  "user_agent": "FraggyAPI/0.1 (https://github.com/mlvnpcrb/FraggyAPI; CONTACT_EMAIL)",
+  "candidates": []
+}

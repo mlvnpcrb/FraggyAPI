@@ -19,7 +19,8 @@
     "preview:local": ".venv/bin/python scripts/preview.py --synthetic",
     "pilot:check": ".venv/bin/python scripts/check_pilot_readiness.py",
     "catalog:media": ".venv/bin/python -m fraggy_api.media.cli",
-    "catalog:collect": ".venv/bin/python -m fraggy_api.collection.cli"
+    "catalog:collect": ".venv/bin/python -m fraggy_api.collection.cli",
+    "pilot:prepare": ".venv/bin/python scripts/prepare_real_pilot.py"
   },
   "devDependencies": {
     "turbo": "2.11.9",
