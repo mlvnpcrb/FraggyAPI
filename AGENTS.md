@@ -2,6 +2,14 @@
 
 ## Boundaries and phase
 
+- Phase 2K now prepares a multi-source engine, not an exclusive Wikidata pilot.
+  Reuse existing transport/jobs/rights/import systems. New source parsers operate
+  only on explicitly synthetic local contracts and cannot activate live adapters.
+  Keep source observations/conflicts separate, never auto-merge or infer missing
+  facts. Rehearsal checkpoints are fixture-only reports, not trusted grants.
+  Preserve all open PRs, the Vercel demo and separate PWA. Live collection, images,
+  scheduling and publication require independently reviewed source/activity approval.
+
 - Phase 2J prepares the 20–50-record first real-data pilot using offline
   synthetic fixtures only. No genuine discovery/entity queries, imports, schedules
   or publication are authorized. CONTACT_EMAIL stays a placeholder. Live Phase 2K

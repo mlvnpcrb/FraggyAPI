@@ -1,4 +1,8 @@
-# Phase 2K — proposed 25-record genuine metadata pilot
+# Earlier Wikidata pilot example — unapproved
+
+**Direction updated:** Phase 2K now targets the [multi-source engine](phase-2k-multisource-architecture.md).
+This document remains one optional source-specific example, not the exclusive
+Phase 2K scope or an approved activity.
 
 **Execution blocked; Phase 2J performs no genuine collection.** This is the
 specific next-step proposal, not authorization. The existing 100-fragrance

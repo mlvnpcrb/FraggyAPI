@@ -1,0 +1,34 @@
+{
+  "synthetic": true,
+  "source": "wikidata",
+  "dataset": "fictional-v1",
+  "collected_at": "2026-01-01T00:00:00Z",
+  "page": 0,
+  "next_page": null,
+  "payload": {
+    "results": {
+      "bindings": [
+        {
+          "item": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q990000000001"
+          },
+          "itemLabel": {
+            "type": "literal",
+            "xml:lang": "en",
+            "value": "Paper Orbit"
+          },
+          "brand": {
+            "type": "uri",
+            "value": "http://www.wikidata.org/entity/Q990000099999"
+          },
+          "brandLabel": {
+            "type": "literal",
+            "xml:lang": "en",
+            "value": "Invented House"
+          }
+        }
+      ]
+    }
+  }
+}

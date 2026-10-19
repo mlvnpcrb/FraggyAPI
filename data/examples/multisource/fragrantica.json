@@ -1,0 +1,25 @@
+{
+  "synthetic": true,
+  "source": "fragrantica",
+  "dataset": "fictional-v1",
+  "collected_at": "2026-01-01T00:00:00Z",
+  "page": 0,
+  "next_page": null,
+  "payload": {
+    "perfumes": [
+      {
+        "id": "f1",
+        "title": "Paper Orbit",
+        "house": "Invented House",
+        "strength": "EDP",
+        "launched": 2020,
+        "nose": ["Fictional Perfumer A"],
+        "top": ["Invented Citrus"],
+        "heart": ["Invented Petal"],
+        "base": ["Invented Wood"],
+        "accords": ["Fictional Woody"],
+        "gender_positioning": "Fictional unisex positioning"
+      }
+    ]
+  }
+}
