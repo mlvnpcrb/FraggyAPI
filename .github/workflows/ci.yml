@@ -10,6 +10,7 @@ on:
         feat/vercel-synthetic-demo,
         feat/phase-2j-real-data-readiness,
         feat/phase-2k-multisource-offline,
+        feat/phase-2l-intelligence,
       ]
 permissions:
   contents: read
@@ -48,6 +49,8 @@ jobs:
         run: .venv/bin/python scripts/prepare_real_pilot.py --dry-run
       - name: Multi-source offline rehearsal
         run: pnpm catalog:rehearse
+      - name: Original-only intelligence demonstration
+        run: pnpm catalog:intelligence
       - name: Backend and frontend tests
         id: tests
         env:

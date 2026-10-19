@@ -2,6 +2,12 @@
 
 ## Boundaries and phase
 
+- Phase 2L adds offline explainable matching, bounded candidate indexes, diagnostics
+  and an unsigned priority planner. Scores are identity evidence, never factual
+  accuracy or probability. Never auto-merge or publish; report truncated candidate
+  coverage. Fixture contracts are not verified live website parsers. Keep PRs
+  #8–#11 unmerged and real collection/schedules off; preserve the demo and PWA.
+
 - Phase 2K now prepares a multi-source engine, not an exclusive Wikidata pilot.
   Reuse existing transport/jobs/rights/import systems. New source parsers operate
   only on explicitly synthetic local contracts and cannot activate live adapters.

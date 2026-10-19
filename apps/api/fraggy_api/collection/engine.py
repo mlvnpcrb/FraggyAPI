@@ -17,6 +17,7 @@ from ..importing.pipeline import stage
 from ..models import CollectionRun, CollectionSource
 from ..quality.report import catalog_quality
 from .adapters import extract, token
+from .diagnostics import explain, source_health
 from .policy import CollectionError, Grant, authorize, source_pair
 from .quality import assess, combine
 from .transport import HTTPTransport, Response
@@ -195,7 +196,13 @@ class Collector:
                 await self.guarded(session, identity, run_id)
 
     async def finish(
-        self, identity: UUID, run_id: UUID, status: str, code: str | None = None
+        self,
+        identity: UUID,
+        run_id: UUID,
+        status: str,
+        code: str | None = None,
+        http_status: int | None = None,
+        cause: str | None = None,
     ) -> None:
         async with self.factory.begin() as session:
             await writer_lock(session)
@@ -219,7 +226,10 @@ class Collector:
             run.status = status
             run.finished_at = self.clock()
             if code:
-                run.errors = [*run.errors[-9:], {"code": code}]
+                run.errors = [
+                    *run.errors[-9:],
+                    {"code": code, "http_status": http_status, "cause": cause},
+                ]
             config.current_run_id = None
             config.lease_until = None
             config.next_due_at = max(
@@ -232,6 +242,8 @@ class Collector:
         code: str | None = None
         visited: set[str | None] = set()
         total = 0
+        observed_status: int | None = None
+        observed_cause: str | None = None
         try:
             for _page in range(100):
                 async with self.factory.begin() as session:
@@ -286,6 +298,8 @@ class Collector:
                             timeout=grant.endpoint.timeout_seconds + 0.5,
                         )
                         response = received
+                        observed_status = received.status
+                        observed_cause = None
                         if received.status not in {429, 500, 502, 503, 504}:
                             break
                         if received.retry_after:
@@ -317,12 +331,19 @@ class Collector:
                             if retry_after > 300:
                                 raise CollectionError("retry_after_exceeds_budget")
                     except (TimeoutError, CollectionError) as error:
-                        if (
-                            isinstance(error, CollectionError)
-                            and str(error) != "network_failure"
-                        ):
+                        if isinstance(error, CollectionError) and str(error) not in {
+                            "network_failure",
+                            "network_timeout",
+                        }:
                             raise
                         response = None
+                        observed_status = None
+                        observed_cause = (
+                            "network_timeout"
+                            if isinstance(error, TimeoutError)
+                            or str(error) == "network_timeout"
+                            else "network_failure"
+                        )
                     if attempt == grant.endpoint.retries:
                         raise CollectionError("retry_exhausted")
                     backoff = max(
@@ -336,7 +357,12 @@ class Collector:
                         )
                         run.errors = [
                             *run.errors[-9:],
-                            {"code": "transient_retry", "attempt": attempt + 1},
+                            {
+                                "code": "transient_retry",
+                                "attempt": attempt + 1,
+                                "http_status": observed_status,
+                                "cause": observed_cause,
+                            },
                         ]
                     await self.wait(identity, run_id, backoff)
                 if response is None:
@@ -417,7 +443,9 @@ class Collector:
         except Exception:
             # Unknown exceptions never expose SQL, URLs, bodies or credentials.
             status, code = "failed", "internal_failure"
-        await self.finish(identity, run_id, status, code)
+        await self.finish(
+            identity, run_id, status, code, observed_status, observed_cause
+        )
         return await self.summary(run_id)
 
     async def summary(self, run_id: UUID) -> dict[str, Any]:
@@ -425,6 +453,15 @@ class Collector:
             run = await session.get(CollectionRun, run_id)
             if run is None:
                 raise CollectionError("run_not_found")
+            diagnostics = [
+                explain(
+                    (event.get("cause") or event["code"])
+                    if event["code"] in {"transient_retry", "retry_exhausted"}
+                    else event["code"],
+                    event.get("http_status"),
+                )
+                for event in run.errors
+            ]
             return {
                 "run_id": str(run.id),
                 "collection_id": str(run.collection_id),
@@ -435,6 +472,10 @@ class Collector:
                 "records_unchanged": run.records_unchanged,
                 "attempts": run.attempts,
                 "errors": run.errors,
+                "diagnostics": diagnostics,
+                "source_health": source_health(diagnostics or [explain(None)])
+                if run.status in {"succeeded", "failed"}
+                else {"health": "unknown", "activation_authorized": False},
                 "quality": run.quality,
                 "ingestion_run_ids": run.ingestion_run_ids,
                 "started_at": run.started_at.isoformat(),

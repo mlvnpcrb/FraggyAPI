@@ -388,3 +388,17 @@ metadata, release/variant distinctions and completeness without merging.
 No live website schema compatibility, collection/import/publication or image
 permission is claimed. See [architecture and commands](docs/phase-2k-multisource-architecture.md)
 and [source coverage/permission assessment](docs/phase-2k-source-coverage.md).
+
+## Phase 2L — offline collection intelligence
+
+`pnpm catalog:intelligence` demonstrates explainable matching, source-failure
+diagnostics and a priority plan using original records, without network or database
+writes. Multi-source rehearsal now includes bounded candidate review, source claim
+pointers, conflicts, missing fields and explicit coverage limits. Matching never
+merges or publishes records. Live website compatibility is not claimed.
+
+Reproduce CPU/memory measurements with
+`pnpm catalog:intelligence --benchmark --size 50000`; add `--hotspot --size 10000`
+for identical-name stress testing. These measure local indexing/scoring, not live
+collection or database throughput. See [architecture and safeguards](docs/phase-2l-architecture.md)
+and [measured results and activation blockers](docs/phase-2l-audit.md).
