@@ -26,3 +26,6 @@ apps/web/next-env.d.ts
 /data/imports/
 /data/reports/
 *.import-report.json
+
+# Local Vercel linkage and downloaded deployment settings are not project source.
+.vercel/

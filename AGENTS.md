@@ -2,6 +2,13 @@
 
 ## Boundaries and phase
 
+- The explicitly requested Vercel demo is a read-only, original-only bundled
+  snapshot, enabled only by `FRAGGY_DEMO_MODE=synthetic`. Its committed public
+  demo media are an exception to private storage for original fixture assets only.
+  Never export real source data/evidence or use fixtures as an API-error fallback.
+  FastAPI/PostgreSQL, authorization and collector defaults remain unchanged.
+  No public deployment until the user approves the exact preview configuration.
+
 - Phase 2H is offline pilot readiness, original-only local preview and audit.
   Keep CONTACT_EMAIL as the user-required placeholder until a real monitored
   contact and exact discovery/collection scope are separately approved. Do not

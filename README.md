@@ -353,3 +353,15 @@ the verified owned API to test error recovery. Outputs stay under ignored
 `data/reports/browser-qa/`. Benchmarks use `scripts/benchmark_preview.py` and remove
 only their own fixture DB/files. Run database outage tests only after all other
 DB-dependent tests/benchmarks finish; restore PostgreSQL healthy afterward.
+
+## Proposed Vercel fictional preview
+
+The website can run without FastAPI/PostgreSQL when explicitly configured with
+`FRAGGY_DEMO_MODE=synthetic`. It bundles the existing 100 fictional fragrances
+and four original image fixtures, labels every page as a read-only demo, and
+preserves the normal backend path when unset. API outages never activate it.
+
+See [the Vercel preview configuration and deployment instructions](docs/vercel-demo.md).
+Set Vercel Root Directory to `apps/web`; do not run the root Python-inclusive
+build. **No public deployment is authorized yet.** The reviewed configuration
+and access policy need approval before creating a `*.vercel.app` preview.
