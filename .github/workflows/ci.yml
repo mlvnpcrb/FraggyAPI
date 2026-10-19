@@ -3,7 +3,13 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: [main, feat/phase-2h-pilot-readiness, feat/vercel-synthetic-demo]
+    branches:
+      [
+        main,
+        feat/phase-2h-pilot-readiness,
+        feat/vercel-synthetic-demo,
+        feat/phase-2j-real-data-readiness,
+      ]
 permissions:
   contents: read
 concurrency:
@@ -37,6 +43,8 @@ jobs:
       - run: pnpm format:check
       - name: Disabled offline pilot proposal
         run: .venv/bin/python scripts/check_pilot_readiness.py config/wikidata-pilot-proposal.json
+      - name: Phase 2J offline pilot rehearsal
+        run: .venv/bin/python scripts/prepare_real_pilot.py --dry-run
       - name: Backend and frontend tests
         id: tests
         env:

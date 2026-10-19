@@ -365,3 +365,15 @@ See [the Vercel preview configuration and deployment instructions](docs/vercel-d
 Set Vercel Root Directory to `apps/web`; do not run the root Python-inclusive
 build. **No public deployment is authorized yet.** The reviewed configuration
 and access policy need approval before creating a `*.vercel.app` preview.
+
+## Phase 2J — first real-data pilot preparation
+
+`pnpm pilot:prepare` reports the disabled 25-record proposal.
+`pnpm pilot:prepare --dry-run` exercises original local SPARQL fixtures through
+the existing adapter/quality rules, with no network, database writes, imports,
+images or publication. Quantities are bounded to 20–50. Genuine collection is
+blocked pending fresh source evidence, a monitored contact, reviewed genuine IDs
+and separate explicit activity approval.
+
+See [source comparison](docs/phase-2j-sources.md) and
+[Phase 2K's proposed workflow and rollback](docs/phase-2k-pilot.md).

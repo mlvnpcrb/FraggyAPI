@@ -2,6 +2,13 @@
 
 ## Boundaries and phase
 
+- Phase 2J prepares the 20–50-record first real-data pilot using offline
+  synthetic fixtures only. No genuine discovery/entity queries, imports, schedules
+  or publication are authorized. CONTACT_EMAIL stays a placeholder. Live Phase 2K
+  requires fresh source evidence, monitored contact, exact scope/candidate IDs and
+  explicit user approval. Preserve PRs #8/#9, Vercel demo files, PWA and all source
+  restrictions. New preparation commands cannot approve or activate collectors.
+
 - The explicitly requested Vercel demo is a read-only, original-only bundled
   snapshot, enabled only by `FRAGGY_DEMO_MODE=synthetic`. Its committed public
   demo media are an exception to private storage for original fixture assets only.
