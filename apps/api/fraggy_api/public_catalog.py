@@ -145,15 +145,18 @@ def grant(
         if contains
         else claim.value == func.to_jsonb(value)
     )
-    return exists(
+    # Resolve the entity's reviewed links before walking their claims/policies.
+    # A single four-table EXISTS lets PostgreSQL start at every source record
+    # when fresh imports have poor statistics, repeating that walk per entity.
+    # These correlated OFFSET 0 boundaries preserve exactly the same predicates
+    # while keeping the inner policy lookup bound to one link and record.
+    permitted_claim = exists(
         select(1)
         .select_from(claim)
-        .join(link, claim.entity_link_id == link.id)
         .join(record, link.source_record_id == record.id)
         .join(source, record.source_id == source.id)
         .where(
-            getattr(link, target) == identity,
-            link.review_status == "approved",
+            claim.entity_link_id == link.id,
             record.processing_state == "linked",
             claim.selection_status == "selected",
             claim.value_state == "known",
@@ -161,9 +164,18 @@ def grant(
             comparison,
             rights,
         )
-        # Keep this an indexed per-entity existence check. Flattening many
-        # grants into semi-joins can multiply badly underestimated claim rows
-        # on newly imported catalogs before PostgreSQL has fresh statistics.
+        .correlate_except(claim, record, source)
+        .offset(0)
+    )
+    return exists(
+        select(1)
+        .select_from(link)
+        .where(
+            getattr(link, target) == identity,
+            link.review_status == "approved",
+            permitted_claim,
+        )
+        .correlate_except(link)
         .offset(0)
     )
 

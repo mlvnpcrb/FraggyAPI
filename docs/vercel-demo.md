@@ -8,28 +8,28 @@ existing behavior. This is not a genuine-data pilot, beta or production launch.
 
 ## Approval configuration
 
-| Setting                                     | Exact proposed value                                                                                                  |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Project                                     | `fraggyapi-demo` (or an available equivalent; final URL assigned by Vercel)                                           |
-| Repository                                  | `mlvnpcrb/FraggyAPI`                                                                                                  |
-| Source branch                               | `feat/vercel-synthetic-demo` at the final reviewed PR head                                                            |
-| Deployment target                           | **Preview**, never `--prod`; do not promote to Production                                                             |
-| Framework preset                            | Next.js                                                                                                               |
-| Root Directory                              | **`apps/web`**                                                                                                        |
-| Include source files outside Root Directory | **Enabled** for workspace root, lockfile and packages                                                                 |
-| Node.js version                             | **24.x**, matching `.node-version` and root engines                                                                   |
-| Package manager                             | **pnpm 11.25.0**, root `packageManager`; preserve frozen lockfile                                                     |
-| Install command                             | `cd ../.. && pnpm install --frozen-lockfile`                                                                          |
-| Build command                               | `pnpm run build` (inside `apps/web`, not root `pnpm build`)                                                           |
-| Output Directory                            | `.next`                                                                                                               |
-| `FRAGGY_DEMO_MODE`                          | **`synthetic`**, Preview environment, build and runtime                                                               |
-| `ENABLE_EXPERIMENTAL_COREPACK`              | **`1`**, Preview environment, for pinned pnpm selection                                                               |
-| API/database/collector credentials          | **None**; leave `API_BASE_URL`, `DATABASE_URL`, `MIGRATION_DATABASE_URL`, and all collector secrets unset             |
-| Public variables                            | No `NEXT_PUBLIC_*` values required                                                                                    |
-| Resources                                   | No database, backend, Blob, storage/CDN add-on or paid integration                                                    |
-| Access                                      | User-approved sharing policy; phone/laptop access may require Vercel sign-in if Deployment Protection is enabled      |
-| Indexing                                    | `X-Robots-Tag: noindex, nofollow, noarchive`; this is not authentication                                              |
-| Billing                                     | Existing eligible free plan and included quotas only; no paid upgrades, commercial-plan assumptions or paid resources |
+| Setting                                     | Exact proposed value                                                                                                                                                     |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Project                                     | `fraggyapi-demo` (or an available equivalent; final URL assigned by Vercel)                                                                                              |
+| Repository                                  | `mlvnpcrb/FraggyAPI`                                                                                                                                                     |
+| Source branch                               | `feat/vercel-synthetic-demo` at the final reviewed PR head                                                                                                               |
+| Deployment target                           | **Preview**, never `--prod`; do not promote to Production                                                                                                                |
+| Framework preset                            | Next.js                                                                                                                                                                  |
+| Root Directory                              | **`apps/web`**                                                                                                                                                           |
+| Include source files outside Root Directory | **Enabled** for workspace root, lockfile and packages                                                                                                                    |
+| Node.js version                             | **24.x**, matching `.node-version` and root engines                                                                                                                      |
+| Package manager                             | **pnpm 11.25.0**, root `packageManager`; preserve frozen lockfile                                                                                                        |
+| Install command                             | `cd ../.. && pnpm install --frozen-lockfile`                                                                                                                             |
+| Build command                               | `pnpm run build` (inside `apps/web`, not root `pnpm build`)                                                                                                              |
+| Output Directory                            | `.next`                                                                                                                                                                  |
+| `FRAGGY_DEMO_MODE`                          | **`synthetic`**, Preview environment, build and runtime                                                                                                                  |
+| `ENABLE_EXPERIMENTAL_COREPACK`              | **`1`**, Preview environment, for pinned pnpm selection                                                                                                                  |
+| API/database/collector credentials          | **None**; leave `API_BASE_URL`, `DATABASE_URL`, `MIGRATION_DATABASE_URL`, and all collector secrets unset                                                                |
+| Public variables                            | No `NEXT_PUBLIC_*` values required                                                                                                                                       |
+| Resources                                   | No database, backend, Blob, storage/CDN add-on or paid integration                                                                                                       |
+| Access                                      | Retain Vercel Authentication for this first Preview; owner signs in on phone/laptop. Do not disable protection or add paid protection features without separate approval |
+| Indexing                                    | `X-Robots-Tag: noindex, nofollow, noarchive`; this is not authentication                                                                                                 |
+| Billing                                     | Existing eligible free plan and included quotas only; no paid upgrades, commercial-plan assumptions or paid resources                                                    |
 
 `apps/web/vercel.json` stores the framework and commands. Root Directory,
 Node version, source-files setting and environment scopes are **project settings**;
@@ -188,9 +188,15 @@ The initial full run hit the pre-existing backend
 timeout (358 backend tests passed, one failed). The isolated diagnostic passed
 with JIT off; the final standard full run passed after browser work ended.
 The initial failing query plan was not captured and the cause is **not proven**.
-No backend code, query, timeout, test assertion or fixture policy was changed.
-This intermittent backend performance issue remains a disclosed follow-up; the
-self-contained Vercel demo does not execute that SQL path.
+A subsequent GitHub PR run reproduced the same timeout, while the push run passed.
+The observed diagnostic plan started rights lookups at source records before
+narrowing the entity link. A narrow SQL-only correction now resolves reviewed
+entity links first, then verifies each link's claims and source policy in a
+correlated inner existence check. All rights/value/selection predicates, fixture
+policies, and the original 10-second test limit remain unchanged. No schema or
+backend architecture change is introduced.
+The original timeout plan was not captured; a universal performance guarantee
+is not claimed. The self-contained Vercel demo does not execute that SQL path.
 
 CI retains the complete foundation checks and adds a separate Node-only
 `vercel-demo` job: frozen install, web production build and the 21-check smoke,
