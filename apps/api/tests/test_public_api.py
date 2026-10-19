@@ -261,8 +261,8 @@ async def test_query_count_is_bounded(
             response = await client.get(f"/api/v1/fragrances?limit={limit}")
             assert response.status_code == 200, response.text
             assert (
-                len(counts) == 7
-            )  # Catalog, file policies and one bounded media batch.
+                len(counts) == 6
+            )  # Window total, file policies and one bounded media batch.
     finally:
         event.remove(bind, "before_cursor_execute", count)
 

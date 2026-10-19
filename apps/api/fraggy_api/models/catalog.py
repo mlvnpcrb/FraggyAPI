@@ -55,6 +55,15 @@ class BrandAlias(Identity, Named, Base):
     brand_id: Mapped[UUID] = fk("brands")
 
 
+class FragranceAlias(Identity, Named, Base):
+    __tablename__ = "fragrance_aliases"
+    __table_args__ = (
+        UniqueConstraint("fragrance_id", "name_key", name="uq_fragrance_aliases_key"),
+        name_check("fragrance_aliases"),
+    )
+    fragrance_id: Mapped[UUID] = fk("fragrances")
+
+
 class FragranceFamily(Identity, Named, Slugged, Base):
     __tablename__ = "fragrance_families"
     __table_args__ = (
@@ -260,3 +269,13 @@ class ReleasePerfumer(Identity, Base):
     perfumer_id: Mapped[UUID] = fk("perfumers")
     credited_role: Mapped[str | None] = mapped_column(String(80))
     perfumer: Mapped[Perfumer] = relationship()
+
+
+# Same immutable normalized key as comparisons; avoid expression/schema drift.
+for _search_model in (Fragrance, Brand, BrandAlias, FragranceAlias):
+    Index(
+        f"ix_{_search_model.__tablename__}_trigram",
+        _search_model.name_key,
+        postgresql_using="gin",
+        postgresql_ops={"name_key": "gin_trgm_ops"},
+    )

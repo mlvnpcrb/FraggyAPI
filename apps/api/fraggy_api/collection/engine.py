@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ..importing.authorization import actor, check_storage, writer_lock
 from ..importing.pipeline import stage
-from ..models import CollectionRun, CollectionSource
+from ..models import CollectionRun, CollectionSource, EnrichmentIntent
 from ..quality.report import catalog_quality
 from .adapters import extract, token
 from .diagnostics import explain, source_health
@@ -123,7 +123,13 @@ class Collector:
         self.sleep = sleep
         self.clock = clock
 
-    async def claim(self, identity: UUID, *, scheduled: bool = False) -> UUID | None:
+    async def claim(
+        self,
+        identity: UUID,
+        *,
+        scheduled: bool = False,
+        enrichment_intent_id: UUID | None = None,
+    ) -> UUID | None:
         async with self.factory.begin() as session:
             config = await session.scalar(
                 select(CollectionSource)
@@ -134,6 +140,13 @@ class Collector:
                 return None
             _, source = await source_pair(session, identity)
             authorize(config, source, self.clock())
+            enrichment = None
+            if enrichment_intent_id is not None:
+                from .enrichment import admit
+
+                enrichment = await admit(
+                    session, enrichment_intent_id, config, source, self.clock()
+                )
             if (
                 config.next_request_at
                 and (config.next_request_at - self.clock()).total_seconds() > 300
@@ -151,6 +164,14 @@ class Collector:
                 if old and old.status == "running":
                     old.status = "interrupted"
                     old.finished_at = self.clock()
+                    old_intent = await session.scalar(
+                        select(EnrichmentIntent)
+                        .where(EnrichmentIntent.collection_run_id == old.id)
+                        .with_for_update()
+                    )
+                    if old_intent is not None:
+                        old_intent.status = "failed"
+                        old_intent.diagnostic = "lease_expired"
                     old.errors = [*old.errors[-9:], {"code": "lease_expired"}]
                     await session.flush()
             run = CollectionRun(
@@ -162,6 +183,10 @@ class Collector:
                 checkpoint=dict(config.checkpoint),
             )
             session.add(run)
+            if enrichment is not None:
+                enrichment.status = "running"
+                enrichment.collection_run_id = run.id
+                enrichment.diagnostic = None
             config.current_run_id = run.id
             config.lease_until = self.clock() + timedelta(seconds=60)
             await session.flush()
@@ -223,6 +248,14 @@ class Collector:
                         source.last_successful_sync = self.clock()
                 except CollectionError:
                     status, code = "failed", "collection_not_authorized"
+            enrichment = await session.scalar(
+                select(EnrichmentIntent)
+                .where(EnrichmentIntent.collection_run_id == run.id)
+                .with_for_update()
+            )
+            if enrichment is not None:
+                enrichment.status = "review" if status == "succeeded" else "failed"
+                enrichment.diagnostic = code
             run.status = status
             run.finished_at = self.clock()
             if code:

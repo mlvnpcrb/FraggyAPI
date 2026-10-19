@@ -15,6 +15,7 @@ from ..models import (
     Brand,
     FieldProvenance,
     Fragrance,
+    FragranceAlias,
     FragranceFamily,
     FragranceRelease,
     FragranceVariant,
@@ -34,7 +35,9 @@ def identity(key: str) -> UUID:
     return uuid5(NAMESPACE, key)
 
 
-async def generate(session: AsyncSession, size: int) -> dict[str, Any]:
+async def generate(
+    session: AsyncSession, size: int, *, search_aliases: bool = False
+) -> dict[str, Any]:
     name = await session.scalar(text("SELECT current_database()"))
     if (
         not isinstance(name, str)
@@ -77,6 +80,7 @@ async def generate(session: AsyncSession, size: int) -> dict[str, Any]:
             "release_year",
             "notes",
             "accords",
+            *(["aliases"] if search_aliases else []),
         ],
         accept_attribution=True,
     )
@@ -156,6 +160,14 @@ async def generate(session: AsyncSession, size: int) -> dict[str, Any]:
             " Night" if i % 7 == 0 else ""
         )
         slug = f"fable-{i:05}"
+        alias = f"Original Archive {i:05}"
+        if search_aliases and i % 100 == 0:
+            add(
+                FragranceAlias,
+                id=identity(f"alias:{i}"),
+                fragrance_id=fragrance,
+                name=alias,
+            )
         add(
             SourceRecord,
             id=record,
@@ -191,7 +203,12 @@ async def generate(session: AsyncSession, size: int) -> dict[str, Any]:
             record,
             "fragrance_id",
             fragrance,
-            {"name": title, "slug": slug, "brand_id": str(brand)},
+            {
+                "name": title,
+                "slug": slug,
+                "brand_id": str(brand),
+                **({"aliases": [alias]} if search_aliases and i % 100 == 0 else {}),
+            },
         )
         variants: list[tuple[str, str, int | None, UUID | None]] = [
             ("edp", "eau_de_parfum", 2020, None),
@@ -285,6 +302,7 @@ async def generate(session: AsyncSession, size: int) -> dict[str, Any]:
         Perfumer,
         SourceRecord,
         Fragrance,
+        FragranceAlias,
         FragranceRelease,
         FragranceVariant,
         ReleaseNote,

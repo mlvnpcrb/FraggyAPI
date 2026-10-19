@@ -457,7 +457,9 @@ async def test_attributed_query_count_is_constant(
                 statements.clear()
                 response = await client.get(f"/api/v1/fragrances?limit={limit}")
                 assert response.status_code == 200
-                assert len(statements) == 8  # One bounded media batch is additive.
+                assert (
+                    len(statements) == 7
+                )  # Window total removes a separate count query.
     finally:
         event.remove(bind, "before_cursor_execute", count)
 
