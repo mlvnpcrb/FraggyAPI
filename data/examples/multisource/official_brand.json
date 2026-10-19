@@ -1,0 +1,32 @@
+{
+  "synthetic": true,
+  "source": "official_brand",
+  "dataset": "fictional-v1",
+  "collected_at": "2026-01-01T00:00:00Z",
+  "page": 0,
+  "next_page": null,
+  "payload": {
+    "products": [
+      {
+        "source_record_id": "b1",
+        "fragrance_name": "Paper Orbit",
+        "brand_name": "Invented House",
+        "concentration": "EDP",
+        "release_year": 2022,
+        "version_label": "Fictional reformulation",
+        "perfumers": ["Fictional Perfumer A"],
+        "bottle_sizes_ml": [50]
+      },
+      {
+        "source_record_id": "b2",
+        "fragrance_name": "Cloud Atelier",
+        "brand_name": "Other Invented House",
+        "concentration": "parfum",
+        "release_year": 2023,
+        "family": "Fictional Floral",
+        "collection": "Fictional Series",
+        "bottle_sizes_ml": [30, 50]
+      }
+    ]
+  }
+}

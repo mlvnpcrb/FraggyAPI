@@ -1,0 +1,36 @@
+{
+  "synthetic": true,
+  "source": "parfumo",
+  "dataset": "fictional-v1",
+  "collected_at": "2026-01-01T00:00:00Z",
+  "page": 0,
+  "next_page": null,
+  "payload": {
+    "entries": [
+      {
+        "key": "p1",
+        "name": "Paper Orbit",
+        "brand": "Invented House",
+        "concentration": "eau_de_parfum",
+        "year": 2020,
+        "perfumers": ["Fictional Perfumer B"],
+        "notes": ["Invented Citrus"],
+        "accords": ["Fictional Fresh"]
+      },
+      {
+        "key": "p2",
+        "name": "Paper Orbit",
+        "brand": "Invented House",
+        "concentration": "EDT",
+        "year": 2020
+      },
+      {
+        "key": "p3",
+        "name": "Paper Orbit Intense",
+        "brand": "Invented House",
+        "concentration": "EDP",
+        "year": 2021
+      }
+    ]
+  }
+}

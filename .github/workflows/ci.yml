@@ -9,6 +9,7 @@ on:
         feat/phase-2h-pilot-readiness,
         feat/vercel-synthetic-demo,
         feat/phase-2j-real-data-readiness,
+        feat/phase-2k-multisource-offline,
       ]
 permissions:
   contents: read
@@ -45,6 +46,8 @@ jobs:
         run: .venv/bin/python scripts/check_pilot_readiness.py config/wikidata-pilot-proposal.json
       - name: Phase 2J offline pilot rehearsal
         run: .venv/bin/python scripts/prepare_real_pilot.py --dry-run
+      - name: Multi-source offline rehearsal
+        run: pnpm catalog:rehearse
       - name: Backend and frontend tests
         id: tests
         env:

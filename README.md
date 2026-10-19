@@ -377,3 +377,14 @@ and separate explicit activity approval.
 
 See [source comparison](docs/phase-2j-sources.md) and
 [Phase 2K's proposed workflow and rollback](docs/phase-2k-pilot.md).
+
+## Phase 2K — multi-source offline foundation
+
+Phase 2K now supports a multi-source direction; Wikidata is one candidate.
+`pnpm catalog:rehearse` parses original Fragrantica-shaped, Parfumo-shaped,
+brand-feed and Wikidata fixtures, retaining source claims and reporting conflicting
+metadata, release/variant distinctions and completeness without merging.
+`--resume-report` supports bounded fixture replay and changed-record detection.
+No live website schema compatibility, collection/import/publication or image
+permission is claimed. See [architecture and commands](docs/phase-2k-multisource-architecture.md)
+and [source coverage/permission assessment](docs/phase-2k-source-coverage.md).
