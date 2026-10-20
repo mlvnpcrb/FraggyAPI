@@ -14,11 +14,11 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import asyncpg
 from fraggy_api.collection.engine import Collector
-from fraggy_api.collection.enrichment import request_intent, run_intent
+from fraggy_api.collection.enrichment import run_intent
 from fraggy_api.database import create_engine, request_session_factory
 from fraggy_api.main import create_app
 from fraggy_api.preview import prepare
@@ -169,22 +169,42 @@ async def run(
                     }
             event.remove(engine.sync_engine, "before_cursor_execute", capture)
             enrichment = []
+            planning = {}
             if search_records:
-                from fraggy_api.collection.providers import PROVIDERS
+                from fraggy_api.collection.pilot_planning import (
+                    SearchSnapshot,
+                    enqueue_plan,
+                    plan_enrichment,
+                )
+
+                snapshot = SearchSnapshot(query="Lattafa Khamrah")
+                at = datetime.now(UTC)
+                samples = []
+                for _ in range(1000):
+                    started = time.perf_counter()
+                    plan_enrichment(snapshot, at)
+                    samples.append((time.perf_counter() - started) * 1000)
+                planning = {
+                    "pure_planning_iterations": 1000,
+                    "median_ms": round(statistics.median(samples), 4),
+                    "p95_ms": round(sorted(samples)[949], 4),
+                }
 
                 factory = async_sessionmaker(engine, expire_on_commit=False)
+                started = time.perf_counter()
                 async with factory.begin() as session:
-                    for provider in PROVIDERS:
-                        intent = await request_intent(
-                            session, provider, "Lattafa Khamrah", datetime.now(UTC)
-                        )
-                        enrichment.append(intent.id)
+                    plan = await enqueue_plan(session, snapshot, at)
+                    enrichment = [UUID(row["id"]) for row in plan["intents"]]
+                planning["ten_provider_enqueue_transaction_ms"] = round(
+                    (time.perf_counter() - started) * 1000, 3
+                )
                 collector = Collector(factory)
                 enrichment = [
                     await run_intent(collector, identity) for identity in enrichment
                 ]
             return {
                 "background_enrichment": enrichment,
+                "enrichment_planning": planning,
                 "external_requests": 0,
                 "synthetic_only": True,
                 "genuine_records": 0,

@@ -1,5 +1,10 @@
 # FraggyAPI
 
+Phase 2N local pilot preparation: [multi-source plan and approval gates](docs/phase-2n-pilot.md).
+`pnpm catalog:collect enrich-plan data/examples/enrichment-search-snapshot.json`
+plans missing/stale-field enrichment without making requests. Optional `--enqueue`
+admits only existing local intents; all real provider dispatch remains blocked.
+
 Phase 2G prepares the first source-specific metadata integration and a rights-aware
 fragrance media pipeline on the existing Next.js, FastAPI and PostgreSQL foundation.
 Wikidata integration is validated with fictional offline records; genuine collection
