@@ -1,7 +1,7 @@
 """Provider-independent durable admission; existing Collector owns execution."""
 
 import re
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
@@ -238,6 +238,21 @@ async def stage_evidence_comparison(
         "automatic_merge": False,
         "publication_authorized": False,
     }
+    # Enrich the existing rights-checked review, never a parallel claim store.
+    from .pilot_planning import Observation, compare_observations
+
+    field_review = compare_observations(
+        [
+            Observation(
+                source=str(row.source_id),
+                reference=str(row.id),
+                collected_at=row.collected_at,
+                record=record,
+            )
+            for row, record in ((left, a), (right, b))
+        ],
+        datetime.now(UTC),
+    )
     # Existing manual review item, not a second review queue or canonical write.
     item = await session.scalar(
         select(DataReviewQueue)
@@ -257,7 +272,9 @@ async def stage_evidence_comparison(
             raise CollectionError("comparison_budget_exceeded")
         comparisons.append(report)
     item.context = {**item.context, "enrichment_comparisons": comparisons}
-    return report
+    # Persist references/states only. Reconstruct values after current rights checks
+    # rather than making extra content copies that outlive source revocation.
+    return {**report, "field_review": field_review}
 
 
 async def run_intent(collector: "Collector", intent_id: UUID) -> dict[str, Any]:

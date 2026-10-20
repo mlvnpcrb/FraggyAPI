@@ -1,0 +1,12 @@
+{
+  "query": "Lattafa Khamrah",
+  "record": null,
+  "verified_fields": {},
+  "providers": [
+    "fragrantica",
+    "parfumo",
+    "openbeautyfacts",
+    "wikidata",
+    "official_brand"
+  ]
+}

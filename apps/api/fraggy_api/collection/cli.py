@@ -24,6 +24,7 @@ from .enrichment import (
     run_intent,
     stage_evidence_comparison,
 )
+from .pilot_planning import SearchSnapshot, enqueue_plan, plan_enrichment
 from .policy import CollectionError, Grant, review_collection
 from .providers import PROVIDERS
 from .transport import HTTPTransport
@@ -54,6 +55,9 @@ def parser() -> argparse.ArgumentParser:
     tick = sub.add_parser("tick")
     tick.add_argument("--allow-external", action="store_true")
     sub.add_parser("providers")
+    plan = sub.add_parser("enrich-plan")
+    plan.add_argument("snapshot", type=Path)
+    plan.add_argument("--enqueue", action="store_true")
     request = sub.add_parser("enrich-request")
     request.add_argument("--query", required=True)
     request.add_argument("--provider", action="append", required=True)
@@ -83,6 +87,15 @@ async def run(args: argparse.Namespace) -> Any:
         factory, HTTPTransport(allow_external=getattr(args, "allow_external", False))
     )
     try:
+        if args.command == "enrich-plan":
+            body = loads(read_text(args.snapshot))
+            bounded(body)
+            snapshot = SearchSnapshot.model_validate(body)
+            at = datetime.now(UTC)
+            if not args.enqueue:
+                return plan_enrichment(snapshot, at)
+            async with factory.begin() as session:
+                return await enqueue_plan(session, snapshot, at)
         if args.command == "providers":
             return [
                 {

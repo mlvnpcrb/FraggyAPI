@@ -2,6 +2,14 @@
 
 ## Boundaries and phase
 
+- Phase 2N adds bounded local post-search planning and private field-review
+  explanations using existing intents/staging. Snapshots and reliability labels
+  never authorize collection or publication. All real providers remain blocked;
+  source independence and genuine perfume coverage require evidence. Preserve PRs
+  #8–#13 and the Phase 2M ancestry. Local work only: no push/PR/deployment/settings
+  changes, genuine imports, images, paid resources or separate PWA changes. The
+  Phase 2M Vercel branch skip rule does not cover Phase 2N.
+
 - Phase 2M keeps PostgreSQL search independent of collection. GET/search never
   creates intents, forwards queries or waits for providers. Trusted local intent
   commands reuse CollectionRun leases, quotas, checkpoints and staging. All real
