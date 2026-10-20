@@ -100,11 +100,19 @@ async def test_seed_is_opt_in_idempotent_and_preserves_edits(
     assert all(
         value
         for name, value in counts.items()
-        if name not in {"collection_sources", "collection_runs"}
+        if name
+        not in {
+            "collection_sources",
+            "collection_runs",
+            "enrichment_intents",
+            "fragrance_aliases",
+        }
     )
     # Existing catalog/provenance examples remain complete; seeding must never
     # configure or activate a collector as a side effect.
     assert counts["collection_sources"] == counts["collection_runs"] == 0
+    # Original seeding must not invent aliases or create enrichment requests.
+    assert counts["enrichment_intents"] == counts["fragrance_aliases"] == 0
 
 
 @pytest.mark.parametrize(
@@ -367,7 +375,7 @@ async def test_foreign_keys_restrict_deletion(
 
 
 def test_all_metadata_foreign_keys_use_restrict() -> None:
-    assert len(Base.metadata.tables) == 22
+    assert len(Base.metadata.tables) == 24
     assert {"collection_sources", "collection_runs"} <= set(Base.metadata.tables)
     assert all(
         fk.ondelete == "RESTRICT"

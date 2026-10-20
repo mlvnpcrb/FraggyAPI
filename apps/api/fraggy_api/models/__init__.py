@@ -5,6 +5,7 @@ from .catalog import (
     Brand,
     BrandAlias,
     Fragrance,
+    FragranceAlias,
     FragranceFamily,
     FragranceRelease,
     FragranceVariant,
@@ -15,7 +16,7 @@ from .catalog import (
     ReleaseNote,
     ReleasePerfumer,
 )
-from .collection import CollectionRun, CollectionSource
+from .collection import CollectionRun, CollectionSource, EnrichmentIntent
 from .provenance import (
     DataReviewQueue,
     DataSource,
@@ -29,10 +30,12 @@ from .provenance import (
 __all__ = [
     "CollectionRun",
     "CollectionSource",
+    "EnrichmentIntent",
     "Accord",
     "Brand",
     "BrandAlias",
     "Fragrance",
+    "FragranceAlias",
     "FragranceFamily",
     "FragranceRelease",
     "FragranceVariant",

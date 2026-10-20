@@ -12,6 +12,7 @@ from sqlalchemy import (
     Index,
     Integer,
     Text,
+    UniqueConstraint,
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -88,3 +89,29 @@ class CollectionRun(Identity, Base):
     errors: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     quality: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     checkpoint: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+
+
+class EnrichmentIntent(Identity, Base):
+    """Deduplicated admission metadata; CollectionRun owns execution and leases."""
+
+    __tablename__ = "enrichment_intents"
+    __table_args__ = (
+        UniqueConstraint("provider", "request_digest", name="uq_enrichment_request"),
+        CheckConstraint(
+            "status IN ('pending','running','review','failed','blocked')",
+            name="ck_enrichment_status",
+        ),
+        Index("ix_enrichment_pending", "status", "next_allowed_at"),
+    )
+    provider: Mapped[str] = mapped_column(Text)
+    request_digest: Mapped[str] = mapped_column(Text)
+    request: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    fragrance_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("fragrances.id", ondelete="RESTRICT")
+    )
+    collection_run_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("collection_runs.id", ondelete="RESTRICT"), unique=True
+    )
+    status: Mapped[str] = mapped_column(Text, default="pending")
+    next_allowed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    diagnostic: Mapped[str | None] = mapped_column(Text)

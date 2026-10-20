@@ -402,3 +402,31 @@ Reproduce CPU/memory measurements with
 for identical-name stress testing. These measure local indexing/scoring, not live
 collection or database throughput. See [architecture and safeguards](docs/phase-2l-architecture.md)
 and [measured results and activation blockers](docs/phase-2l-audit.md).
+
+## Phase 2M — local search and multi-source enrichment
+
+Search uses PostgreSQL trigram indexes and bounded edit-distance checks, reviewed
+brand/fragrance aliases, and concentration/variant filters. It never requests a
+provider or creates background work. Separate trusted operator commands manage
+provider-scoped intents through the existing collector and manual review queue:
+
+```bash
+pnpm catalog:collect providers
+pnpm catalog:collect enrich-request --query "Lattafa Khamrah" --provider openbeautyfacts --provider wikidata
+pnpm catalog:collect enrich-list
+pnpm catalog:collect enrich-run INTENT_UUID
+```
+
+Requests store private intent metadata, not genuine fragrance records. All real
+dispatch is blocked; no recurring worker starts. For the owned offline demonstration
+and full API latency measurement, with existing local PostgreSQL available:
+
+```bash
+.venv/bin/python scripts/benchmark_preview.py --search-records 10000 --repeats 10 --warmup 1 --output data/reports/phase2m-search.json
+```
+
+This creates/removes only its own disposable database, reuses the original load
+fixtures and returns no fabricated genuine result for “Lattafa Khamrah.” See the
+[local implementation report](docs/phase-2m-local-report.md). The
+[25-record pilot proposal](docs/first-25-source-decision.md) stays optional and
+requires separate source/activity approval. No push or deployment is authorized.

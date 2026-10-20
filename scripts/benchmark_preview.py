@@ -11,14 +11,18 @@ import subprocess
 import sys
 import tempfile
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 import asyncpg
+from fraggy_api.collection.engine import Collector
+from fraggy_api.collection.enrichment import request_intent, run_intent
 from fraggy_api.database import create_engine, request_session_factory
 from fraggy_api.main import create_app
 from fraggy_api.preview import prepare
+from fraggy_api.quality.benchmark_data import generate
 from fraggy_api.settings import Settings
 from httpx2 import ASGITransport, AsyncClient
 from pydantic import SecretStr
@@ -29,9 +33,13 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 ROOT = Path(__file__).resolve().parents[1]
 
 
-async def run(repeats: int, warmup: int) -> dict[str, Any]:
+async def run(
+    repeats: int, warmup: int, search_records: int | None = None
+) -> dict[str, Any]:
     if not 1 <= repeats <= 30 or not 0 <= warmup <= 5:
         raise ValueError("Bounded benchmark repetitions required")
+    if search_records is not None and search_records not in {100, 1000, 10000}:
+        raise ValueError("Bounded original search data sizes required")
     settings = Settings()
     parsed = make_url(settings.database_url.get_secret_value())
     if settings.app_env == "production" or parsed.host not in {
@@ -79,7 +87,11 @@ async def run(repeats: int, warmup: int) -> dict[str, Any]:
             async with async_sessionmaker(
                 engine, expire_on_commit=False
             ).begin() as session:
-                fixture = await prepare(session, root, 100)
+                fixture = (
+                    await generate(session, search_records, search_aliases=True)
+                    if search_records
+                    else await prepare(session, root, 100)
+                )
             async with engine.begin() as connection:
                 await connection.execute(text("ANALYZE"))
             app = create_app(config)
@@ -102,9 +114,19 @@ async def run(repeats: int, warmup: int) -> dict[str, Any]:
                 "search": "/api/v1/fragrances/search?q=Cedar&limit=20",
                 "filter": "/api/v1/fragrances?brand=invented-house-000&concentration=eau_de_parfum&limit=20",
                 "pagination": "/api/v1/fragrances?offset=20&limit=20",
-                "detail": "/api/v1/fragrances/" + fixture["fragrance_id"],
-                "image": "/api/v1/media/" + fixture["image_ids"][0] + "/display",
+                "detail": "/api/v1/fragrances/" + fixture.get("fragrance_id", "unused"),
+                "image": "/api/v1/media/"
+                + fixture.get("image_ids", ["unused"])[0]
+                + "/display",
             }
+            if search_records:
+                scenarios = {
+                    "exact": "/api/v1/fragrances/search?q=Fable+Iris+00002",
+                    "typo_brand": "/api/v1/fragrances/search?q=Invenetd+House+002+Fabel+Iris+00002",
+                    "alias": "/api/v1/fragrances/search?q=Original+Archive+00000",
+                    "concentration": "/api/v1/fragrances/search?q=Fable+Iris+00002+EDT",
+                    "lattafa_khamrah_no_data": "/api/v1/fragrances/search?q=Lattafa+Khamrah",
+                }
             results = {}
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -128,7 +150,10 @@ async def run(repeats: int, warmup: int) -> dict[str, Any]:
                                 and response.content
                             )
                         else:
-                            assert response.json()["data"]
+                            if label == "lattafa_khamrah_no_data":
+                                assert response.json()["pagination"]["total"] == 0
+                            else:
+                                assert response.json()["data"]
                         if iteration >= warmup:
                             samples.append(elapsed)
                             counts.append(len(reads))
@@ -143,12 +168,30 @@ async def run(repeats: int, warmup: int) -> dict[str, Any]:
                         "all_attempts": warmup + repeats,
                     }
             event.remove(engine.sync_engine, "before_cursor_execute", capture)
+            enrichment = []
+            if search_records:
+                from fraggy_api.collection.providers import PROVIDERS
+
+                factory = async_sessionmaker(engine, expire_on_commit=False)
+                async with factory.begin() as session:
+                    for provider in PROVIDERS:
+                        intent = await request_intent(
+                            session, provider, "Lattafa Khamrah", datetime.now(UTC)
+                        )
+                        enrichment.append(intent.id)
+                collector = Collector(factory)
+                enrichment = [
+                    await run_intent(collector, identity) for identity in enrichment
+                ]
             return {
+                "background_enrichment": enrichment,
+                "external_requests": 0,
                 "synthetic_only": True,
                 "genuine_records": 0,
                 "genuine_images": 0,
-                "fixture_fragrances": 100,
-                "fixture_images": 4,
+                "fixture_fragrances": search_records or 100,
+                "dataset_counts": fixture if search_records else {},
+                "fixture_images": 0 if search_records else 4,
                 "repeats": repeats,
                 "warmup": warmup,
                 "python": platform.python_version(),
@@ -170,10 +213,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--warmup", type=int, default=1)
+    parser.add_argument("--search-records", type=int, choices=(100, 1000, 10000))
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
-        result = asyncio.run(run(args.repeats, args.warmup))
+        result = asyncio.run(run(args.repeats, args.warmup, args.search_records))
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(result, indent=2) + "\n")
     except Exception as exc:

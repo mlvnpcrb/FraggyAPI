@@ -25,8 +25,8 @@ def test_disposable_migration_upgrade_downgrade_and_reupgrade() -> None:
         assert {row[0] for row in baseline} == {"alembic_version"}
         migrate(url, "upgrade", "head")
         expected = asyncio.run(fingerprint(url))
-        assert len({row[0] for row in expected}) == 23
-        assert "0006_media" in migrate(url, "current")
+        assert len({row[0] for row in expected}) == 25
+        assert "0008_search_typos" in migrate(url, "current")
         assert {"collection_sources", "collection_runs"} <= {row[0] for row in expected}
         assert "No new upgrade operations detected" in migrate(url, "check")
         migrate(url, "downgrade", "0003_search")

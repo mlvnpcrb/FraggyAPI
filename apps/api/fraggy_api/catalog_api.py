@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from sqlalchemy import and_, case, func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql.elements import ColumnElement
@@ -18,6 +18,7 @@ from .models import (
     Brand,
     Fragrance,
     FragranceRelease,
+    FragranceVariant,
     Note,
     ReleaseAccord,
     ReleaseNote,
@@ -34,6 +35,8 @@ from .public_catalog import (
 )
 from .public_credits import attach_credits
 from .public_rights import Access, read_access
+from .search import candidates as search_candidates
+from .search import terms as search_terms
 from .settings import Settings
 
 
@@ -80,6 +83,10 @@ class CatalogQuery(BaseModel):
     )
     concentration: Concentration | None = None
     year: int | None = Field(default=None, ge=1000, le=2999)
+    size_ml: float | None = Field(default=None, gt=0, le=999999, allow_inf_nan=False)
+    gtin: str | None = Field(
+        default=None, pattern=r"^(?:[0-9]{8}|[0-9]{12}|[0-9]{13}|[0-9]{14})$"
+    )
     notes: list[UUID] = Field(default_factory=list, max_length=10)
     accords: list[UUID] = Field(default_factory=list, max_length=10)
     sort: Literal["relevance", "name", "name_desc"] = "relevance"
@@ -310,10 +317,28 @@ async def catalog(
     media_root: Path | None = None,
 ) -> Page[FragrancePublic]:
     f, b, r = Fragrance, Brand, FragranceRelease
+    if params.q:
+        try:
+            _, inferred = search_terms(params.q)
+        except ValueError as error:
+            raise HTTPException(
+                400, "Search supports sixteen terms and 120 normalized characters"
+            ) from error
+        if inferred and params.concentration and inferred != params.concentration:
+            raise HTTPException(400, "Conflicting concentration filters")
+        if inferred and not params.concentration:
+            params = params.model_copy(update={"concentration": inferred})
     conditions = [fragrance_visible(demo)]
     if params.brand:
         conditions.append(b.slug == params.brand)
-    if params.concentration or params.year or params.notes or params.accords:
+    if (
+        params.concentration
+        or params.year
+        or params.notes
+        or params.accords
+        or params.size_ml
+        or params.gtin
+    ):
         release_conditions = [release_visible(demo)]
         for field, value in [
             ("concentration", params.concentration),
@@ -326,6 +351,31 @@ async def catalog(
                         grant("release_id", r.id, field, getattr(r, field), demo),
                     ]
                 )
+        if params.size_ml or params.gtin:
+            variant_conditions = [FragranceVariant.release_id == r.id]
+            for variant_field, variant_value in (
+                ("bottle_size_ml", params.size_ml),
+                ("gtin", params.gtin),
+            ):
+                if variant_value is not None:
+                    variant_conditions.extend(
+                        [
+                            getattr(FragranceVariant, variant_field) == variant_value,
+                            grant(
+                                "variant_id",
+                                FragranceVariant.id,
+                                variant_field,
+                                getattr(FragranceVariant, variant_field),
+                                demo,
+                            ),
+                        ]
+                    )
+            release_conditions.append(
+                select(1)
+                .select_from(FragranceVariant)
+                .where(*variant_conditions)
+                .exists()
+            )
         filter_specs: list[tuple[str, list[UUID], Any, Any, str, str]] = [
             ("notes", params.notes, ReleaseNote, Note, "note_id", "note_id"),
             (
@@ -371,27 +421,10 @@ async def catalog(
         conditions.append(f.id.in_(select(eligible_releases.c.fragrance_id)))
     order: list[Any] = []
     if params.q:
-        query = func.plainto_tsquery("simple", params.q)
-        exact = or_(
-            func.lower(f.name) == params.q.lower(),
-            func.lower(b.name) == params.q.lower(),
-        )
-        # Escape wildcard characters: user text is never a LIKE pattern or SQL.
-        escaped = params.q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-        conditions.append(
-            or_(
-                f.search_vector.op("@@")(query),
-                b.name.ilike(f"%{escaped}%", escape="\\"),
-                exact,
-            )
-        )
+        condition, relevance = await search_candidates(session, params.q, demo)
+        conditions.append(condition)
         if params.sort == "relevance":
-            order.extend(
-                [
-                    case((exact, 1), else_=0).desc(),
-                    func.ts_rank_cd(f.search_vector, query).desc(),
-                ]
-            )
+            order.extend(relevance)
     order.extend(
         [f.name_key.desc() if params.sort == "name_desc" else f.name_key, f.id]
     )
@@ -405,17 +438,22 @@ async def catalog(
         .join(b)
         .where(*conditions)
     )
-    total = await session.scalar(select(func.count()).select_from(base.subquery()))
     rows = (
         await session.execute(
-            base.order_by(*order).limit(params.limit).offset(params.offset)
+            base.add_columns(func.count().over())
+            .order_by(*order)
+            .limit(params.limit)
+            .offset(params.offset)
         )
     ).all()
+    total = int(rows[0][4]) if rows else 0
+    if not rows and params.offset:
+        total = (
+            await session.scalar(select(func.count()).select_from(base.subquery())) or 0
+        )
     return Page(
-        data=await project(session, rows, demo, media_root),
-        pagination=Pagination(
-            limit=params.limit, offset=params.offset, total=total or 0
-        ),
+        data=await project(session, [row[:4] for row in rows], demo, media_root),
+        pagination=Pagination(limit=params.limit, offset=params.offset, total=total),
     )
 
 

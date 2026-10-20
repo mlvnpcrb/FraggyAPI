@@ -2,6 +2,15 @@
 
 ## Boundaries and phase
 
+- Phase 2M keeps PostgreSQL search independent of collection. GET/search never
+  creates intents, forwards queries or waits for providers. Trusted local intent
+  commands reuse CollectionRun leases, quotas, checkpoints and staging. All real
+  enrichment dispatch stays blocked; reviewed loopback fixtures alone can execute.
+  Alias search requires current field-level publication grants. Raw observations
+  require explicitly reviewed source_observation.* fields and remain private.
+  Preserve the optional 25-record pilot and PRs #8–#12. Local commits/tests only:
+  no push/PR creation (Vercel auto-deploys), deployments, settings or PWA changes.
+
 - Phase 2L adds offline explainable matching, bounded candidate indexes, diagnostics
   and an unsigned priority planner. Scores are identity evidence, never factual
   accuracy or probability. Never auto-merge or publish; report truncated candidate

@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import json
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -14,10 +15,17 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from ..database import create_engine
 from ..importing.formats import bounded, loads, read_text
-from ..models import CollectionRun, CollectionSource
+from ..models import CollectionRun, CollectionSource, EnrichmentIntent
 from ..settings import Settings
 from .engine import Collector, activate, cancel, revoke_collection
+from .enrichment import (
+    intent_summary,
+    request_intent,
+    run_intent,
+    stage_evidence_comparison,
+)
 from .policy import CollectionError, Grant, review_collection
+from .providers import PROVIDERS
 from .transport import HTTPTransport
 
 
@@ -45,6 +53,19 @@ def parser() -> argparse.ArgumentParser:
     run.add_argument("--allow-external", action="store_true")
     tick = sub.add_parser("tick")
     tick.add_argument("--allow-external", action="store_true")
+    sub.add_parser("providers")
+    request = sub.add_parser("enrich-request")
+    request.add_argument("--query", required=True)
+    request.add_argument("--provider", action="append", required=True)
+    request.add_argument("--fragrance-id", type=UUID)
+    request.add_argument("--concentration")
+    request.add_argument("--variant-id", type=UUID)
+    enrich = sub.add_parser("enrich-run")
+    enrich.add_argument("id", type=UUID)
+    sub.add_parser("enrich-list")
+    compare = sub.add_parser("enrich-compare")
+    compare.add_argument("left", type=UUID)
+    compare.add_argument("right", type=UUID)
     sub.add_parser("list")
     sub.add_parser("quality")
     return root
@@ -62,6 +83,18 @@ async def run(args: argparse.Namespace) -> Any:
         factory, HTTPTransport(allow_external=getattr(args, "allow_external", False))
     )
     try:
+        if args.command == "providers":
+            return [
+                {
+                    "provider": p.key,
+                    "capabilities": p.capabilities,
+                    "contract": p.contract,
+                    "live_enabled": p.live_enabled,
+                }
+                for p in PROVIDERS.values()
+            ]
+        if args.command == "enrich-run":
+            return await run_intent(collector, args.id)
         if args.command == "run":
             return await collector.run(args.id)
         if args.command == "tick":
@@ -82,6 +115,37 @@ async def run(args: argparse.Namespace) -> Any:
                 )
             return [await collector.summary(i) for i in identities]
         async with factory.begin() as session:
+            if args.command == "enrich-request":
+                providers = list(dict.fromkeys(args.provider))
+                if len(providers) > 10:
+                    raise CollectionError("enrichment_provider_limit")
+                return [
+                    intent_summary(
+                        await request_intent(
+                            session,
+                            provider,
+                            args.query,
+                            datetime.now(UTC),
+                            fragrance_id=args.fragrance_id,
+                            concentration=args.concentration,
+                            variant_id=args.variant_id,
+                        )
+                    )
+                    for provider in providers
+                ]
+            if args.command == "enrich-list":
+                intents = (
+                    await session.scalars(
+                        select(EnrichmentIntent)
+                        .order_by(
+                            EnrichmentIntent.created_at.desc(), EnrichmentIntent.id
+                        )
+                        .limit(100)
+                    )
+                ).all()
+                return [intent_summary(row) for row in intents]
+            if args.command == "enrich-compare":
+                return await stage_evidence_comparison(session, args.left, args.right)
             if args.command == "review":
                 body = loads(read_text(args.grant))
                 bounded(body)
